@@ -1,6 +1,6 @@
 /*
   Module for converting data from http://poker.cs.ualberta.ca/IRCdata/ to
-  pairs of (context, action)
+  pairs of (class, context)
   Copyright (C) 2015 Hugo W.L. ter Doest
 
   This program is free software: you can redistribute it and/or modify
@@ -20,10 +20,9 @@
 var fs = require('fs');
 
 // Poker hands database
-var base = '/home/hugo/Workspace/poker-db/';
-
-// Output file
-var actionsFile = '';
+var workspace = '/home/hugo/Workspace/';
+var base = workspace + 'poker-db/';
+var output_base = workspace + 'poker-db-converter/data/';
 
 var hands = {};
 var actions = {};
@@ -33,6 +32,9 @@ var bigBlind = 10;
 
 var numberOfBettingRounds = 0;
 var numberOfWrongCalculatedPots = 0;
+var numberOfBettingActions = 0;
+
+var classContextPairs = [];
 
 var PREFLOP = 0;
 var FLOP = 1;
@@ -140,12 +142,12 @@ function gameConfiguration(channel) {
 
 // Build a context of information that can be used for deciding on the next
 // betting action
-function createContext(hand, playerActions, bettingRound, pot, player, positionInActionString) {
+function createContext(hand, playerActions, bettingRound, potBeforeBettingAction, player, positionInActionString) {
   var context = {};
 
   context.playerPosition = player;
   context.bettingRound = bettingRound;
-  context.pot = pot;
+  context.potBeforeBettingAction = potBeforeBettingAction;
   // Cards that are know in this bettingRound
   context.communityCards = [];
   switch (bettingRound) {
@@ -218,14 +220,17 @@ function createContext(hand, playerActions, bettingRound, pot, player, positionI
 }
 
 // Write poker actions in the form (action, context)
-function printBettingAction(timeStamp, player, bettingAction, context) {
+function createBettingAction(timeStamp, player, bettingAction, context) {
+  // We are only interested in betting actions based on hole cards
   if (context.holeCards) {
     var entry = {};
     entry.timeStamp = timeStamp;
     entry.player = player;
     entry.class = bettingAction;
     entry.context = context;
+    classContextPairs.push(entry);
     console.log(JSON.stringify(entry, null, 2));
+    numberOfBettingActions++;
   }
 }
 
@@ -263,6 +268,7 @@ function replayBettingRound(timeStamp, pot, bettingRound) {
   i = 0;
   var newBettingActionFound;
   do {
+    potBeforeBettingAction = pot;
     newBettingActionFound = false;
     playerActions.forEach(function (action, index) {
       // action has the form:
@@ -331,8 +337,9 @@ function replayBettingRound(timeStamp, pot, bettingRound) {
         }
         playerBets[index] += bettingAction.bettingAmount;
         pot += bettingAction.bettingAmount;
-        var context = createContext(hand, playerActions, bettingRound, pot, index, i);
-        printBettingAction(timeStamp, player, bettingAction, context);
+        var context = createContext(hand, playerActions, bettingRound,
+          potBeforeBettingAction, index, i);
+        createBettingAction(timeStamp, player, bettingAction, context);
       }
     });
     // Calculate number of players that see the end of the betting round, i.e.
@@ -376,6 +383,7 @@ function replayBettingRound(timeStamp, pot, bettingRound) {
 }
 
 function replayHands() {
+  console.log('[');
   Object.keys(hands).forEach(function (timeStamp) {
     var pot = 0;
     pot = replayBettingRound(timeStamp, pot, PREFLOP);
@@ -383,11 +391,21 @@ function replayHands() {
     pot = replayBettingRound(timeStamp, pot, TURN);
     replayBettingRound(timeStamp, pot, RIVER);
   });
+  console.log(']');
+}
+
+function writeClassContextPairs(channel) {
+  fs.writeFileSync(output_base + channel + '.json',
+    JSON.stringify(classContextPairs, null, 2), 'utf8');
+  console.log('writeClassContextPairs: wrote ' +
+    classContextPairs.length + ' class context pairs');
 }
 
 gameConfiguration('holdem')
 readPokerDB('holdem');
 replayHands();
+writeClassContextPairs('holdem');
 
 console.log('Number of betting rounds: ' + numberOfBettingRounds);
-console.log('Wrong calculated pots (each betting round): ' + numberOfWrongCalculatedPots);
+console.log('Wrong calculated pots (each betting round): ' +
+  numberOfWrongCalculatedPots);
