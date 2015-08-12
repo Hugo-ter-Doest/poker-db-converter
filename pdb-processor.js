@@ -20,8 +20,8 @@
 var fs = require('fs');
 
 // Poker hands database
-//var workspace = '/home/hugo/Workspace/';
-var workspace = '/Workspace/';
+var workspace = '/home/hugo/Workspace/';
+//var workspace = '/Workspace/';
 var base = workspace + 'poker-db/';
 var output_base = workspace + 'poker-db-converter/data/';
 
@@ -146,6 +146,7 @@ function gameConfiguration(channel) {
 function createContext(hand, playerActions, bettingRound, potBeforeBettingAction, player, positionInActionString) {
   var context = {};
 
+  context.numberOfPlayers = hand[3];
   context.playerPosition = player;
   context.bettingRound = bettingRound;
   context.potBeforeBettingAction = potBeforeBettingAction;
@@ -238,6 +239,9 @@ function createBettingAction(timeStamp, player, bettingAction, context) {
 function replayBettingRound(timeStamp, pot, bettingRound) {
   numberOfBettingRounds++;
   var numberOfActivePlayers = 0;
+  //timestamp      hand #     #players/starting potsize
+  //          dealer    #play flop    turn    river  showdn     board
+  //766303976   1   455  8  6/600   6/1200  6/1800  3/2400  3s Jc Qd 5c Ah
   var hand = hands[timeStamp];
   // Get the player actions of this hand and sort by player position
   var playerActions = actions[timeStamp].
