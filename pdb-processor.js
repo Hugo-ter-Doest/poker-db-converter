@@ -20,7 +20,8 @@
 var fs = require('fs');
 
 // Poker hands database
-var workspace = '/home/hugo/Workspace/';
+//var workspace = '/home/hugo/Workspace/';
+var workspace = '/Workspace/';
 var base = workspace + 'poker-db/';
 var output_base = workspace + 'poker-db-converter/data/';
 
@@ -383,7 +384,6 @@ function replayBettingRound(timeStamp, pot, bettingRound) {
 }
 
 function replayHands() {
-  console.log('[');
   Object.keys(hands).forEach(function (timeStamp) {
     var pot = 0;
     pot = replayBettingRound(timeStamp, pot, PREFLOP);
@@ -391,7 +391,6 @@ function replayHands() {
     pot = replayBettingRound(timeStamp, pot, TURN);
     replayBettingRound(timeStamp, pot, RIVER);
   });
-  console.log(']');
 }
 
 function writeClassContextPairs(channel) {
@@ -401,7 +400,7 @@ function writeClassContextPairs(channel) {
     classContextPairs.length + ' class context pairs');
 }
 
-gameConfiguration('holdem')
+gameConfiguration('holdem');
 readPokerDB('holdem');
 replayHands();
 writeClassContextPairs('holdem');
