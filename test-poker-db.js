@@ -1,9 +1,7 @@
 
 var classContextPairs = require('./data/holdem.json');
 
-var holeCard1 = 'Jd';/**
- * Created by hugo.terdoest on 12-8-2015.
- */
+var holeCard1 = 'Jd';
 var holeCard2 = '7h';
 
 var nr = 0;
