@@ -143,7 +143,7 @@ function gameConfiguration(channel) {
 
 // Build a context of information that can be used for deciding on the next
 // betting action
-function createContext(hand, playerActions, bettingRound, potBeforeBettingAction, player, positionInActionString) {
+function createContext(hand, actionHistory, currentAction, bettingRound, potBeforeBettingAction, player) {
   var context = {};
 
   context.numberOfPlayers = hand[3];
@@ -180,44 +180,10 @@ function createContext(hand, playerActions, bettingRound, potBeforeBettingAction
       }
   }
   // Hole cards (if known)
-  if (playerActions[player].length === 13) {
-    context.holeCards = [playerActions[player][11], playerActions[player][12]];
+  if (currentAction.length === 13) {
+    context.holeCards = [currentAction[11], currentAction[12]];
   }
-  // Previous betting actions in this betting round
-  i = 0;
-  var newBettingActionFound;
-  context.bettingHistory = [];
-  do {
-    newBettingActionFound = false;
-    playerActions.forEach(function (action, index) {
-      if ((i < positionInActionString) ||
-        ((i === positionInActionString) && (index < player))) {
-        var bettingActions = null;
-        switch (bettingRound) {
-          case PREFLOP:
-            bettingActions = action[4];
-            break;
-          case FLOP:
-            bettingActions = action[5];
-            break;
-          case TURN:
-            bettingActions = action[6];
-            break;
-          case RIVER:
-            bettingActions = action[7];
-            break;
-        }
-        if (i < bettingActions.length) {
-          newBettingActionFound = true;
-          context.bettingHistory.push(index + ": " + bettingActions[i]);
-        }
-        else {
-          context.bettingHistory.push(index + ": <none>");
-        }
-      }
-    });
-    i++;
-  } while (newBettingActionFound && (i <= positionInActionString));
+  context.bettingHistory = actionHistory;
   return(context);
 }
 
@@ -259,6 +225,7 @@ function replayBettingRound(timeStamp, pot, bettingRound) {
       currentBettingAmount = bigBet;
       raiseAmount = bigBet;
   }
+  var actionHistory = [];
   var smallBlindPlayed = false;
   var playerBets = new Array(hand[3]);
   for (var i = 0; i < hand[3]; i++) {
@@ -342,9 +309,11 @@ function replayBettingRound(timeStamp, pot, bettingRound) {
         }
         playerBets[index] += bettingAction.bettingAmount;
         pot += bettingAction.bettingAmount;
-        var context = createContext(hand, playerActions, bettingRound,
-          potBeforeBettingAction, index, i);
+        var context = createContext(hand, actionHistory, action, bettingRound,
+          potBeforeBettingAction, index + 1);
         createBettingAction(timeStamp, player, bettingAction, context);
+        actionHistory.push((index + 1) + '/' + bettingAction.bettingAction + '/' +
+          bettingAction.bettingAmount);
       }
     });
     // Calculate number of players that see the end of the betting round, i.e.
