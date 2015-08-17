@@ -18,6 +18,7 @@
 */
 
 var fs = require('fs');
+var underscore = require('underscore');
 
 // Poker hands database
 var workspace = '/home/hugo/Workspace/';
@@ -145,57 +146,85 @@ function gameConfiguration(channel) {
 // betting action
 function createContext(hand, actionHistory, currentAction, bettingRound, potBeforeBettingAction, player) {
   var context = {};
-
   context.numberOfPlayers = hand[3];
   context.playerPosition = player;
-  context.bettingRound = bettingRound;
   context.potBeforeBettingAction = potBeforeBettingAction;
   // Cards that are know in this bettingRound
   context.communityCards = [];
   switch (bettingRound) {
     case PREFLOP:
+      context.bettingRound = 'preflop';
       break;
     case FLOP:
+      context.bettingRound = 'flop';
       if (hand.length === 11) {
         context.communityCards.push(hand[8]);
         context.communityCards.push(hand[9]);
         context.communityCards.push(hand[10]);
       }
+      context.flop = {};
+      context.flop.numberOfPlayers = hand[4].split('/')[0];
+      context.flop.pot = hand[4].split('/')[1];
       break;
     case TURN:
+      context.bettingRound = 'turn';
       if (hand.length === 12) {
         context.communityCards.push(hand[8]);
         context.communityCards.push(hand[9]);
         context.communityCards.push(hand[10]);
         context.communityCards.push(hand[11]);
+        context.flop = {};
+        context.flop.numberOfPlayers = hand[4].split('/')[0];
+        context.flop.pot = hand[4].split('/')[1];
+        context.turn = {};
+        context.turn.numberOfPlayers = hand[5].split('/')[0];
+        context.turn.pot = hand[5].split('/')[1];
       }
       break;
     case RIVER:
+      context.bettingRound = 'river';
       if (hand.length === 13) {
         context.communityCards.push(hand[8]);
         context.communityCards.push(hand[9]);
         context.communityCards.push(hand[10]);
         context.communityCards.push(hand[11]);
         context.communityCards.push(hand[12]);
+        context.flop = {};
+        context.flop.numberOfPlayers = hand[4].split('/')[0];
+        context.flop.pot = hand[4].split('/')[1];
+        context.turn = {};
+        context.turn.numberOfPlayers = hand[5].split('/')[0];
+        context.turn.pot = hand[5].split('/')[1];
+        context.river = {};
+        context.river.numberOfPlayers = hand[6].split('/')[0];
+        context.river.pot = hand[6].split('/')[1];
       }
   }
   // Hole cards (if known)
   if (currentAction.length === 13) {
     context.holeCards = [currentAction[11], currentAction[12]];
   }
-  context.bettingHistory = actionHistory;
+  // A shallow copy of the betting history is created because
+  // the history will grow as we further process the hand
+  context.bettingHistory = underscore.clone(actionHistory);
   return(context);
 }
 
 // Write poker actions in the form (action, context)
 function createBettingAction(timeStamp, player, bettingAction, context) {
-  // We are only interested in betting actions based on hole cards
+  // We are only interested in betting actions for which the hole cards are
+  // known
   if (context.holeCards) {
     var entry = {};
-    entry.timeStamp = timeStamp;
-    entry.player = player;
+    // db values refer to the original database files (keys in fact)
+    entry.db = {};
+    entry.db.timeStamp = timeStamp;
+    entry.db.player = player;
+    // class is the future we want to predict
     entry.class = bettingAction;
+    // context is the history
     entry.context = context;
+    // Store the entry
     classContextPairs.push(entry);
     console.log(JSON.stringify(entry, null, 2));
     numberOfBettingActions++;
@@ -266,6 +295,7 @@ function replayBettingRound(timeStamp, pot, bettingRound) {
         newBettingActionFound = true;
         var player = action[0];
         var bettingAction = {};
+        bettingAction.playerPosition = index + 1;
         bettingAction.bettingAction = bettingActions[i];
         bettingAction.bettingAmount = 0;
         switch (bettingAction.bettingAction) {
@@ -274,36 +304,46 @@ function replayBettingRound(timeStamp, pot, bettingRound) {
             break;
           case 'B': // blind bet (either small or big blind)
             if (smallBlindPlayed) { // this is big blind
+              bettingAction.bettingAction = 'bigBlind';
               bettingAction.bettingAmount = bigBlind;
               currentBettingAmount = bigBlind;
             }
             else { // this is small blind
+              bettingAction.bettingAction = 'smallBlind';
               bettingAction.bettingAmount = smallBlind;
               smallBlindPlayed = true;
             }
             break;
           case 'f': // fold
+            bettingAction.bettingAction = 'fold';
             activePlayers[index] = false;
             break;
           case 'k': // check
+            bettingAction.bettingAction = 'check';
             break;
           case 'b': // bet
+            bettingAction.bettingAction = 'bet';
             bettingAction.bettingAmount = currentBettingAmount;
             break;
           case 'c': // call
+            bettingAction.bettingAction = 'call';
             bettingAction.bettingAmount = currentBettingAmount - playerBets[index];
             break;
           case 'r': // raise
+            bettingAction.bettingAction = 'raise';
             currentBettingAmount += raiseAmount;
             bettingAction.bettingAmount = currentBettingAmount - playerBets[index];
             break;
           case 'A': // all-in
+            bettingAction.bettingAction = 'all-in';
             bettingAction.bettingAmount = action[8] - playerBets[index];
             break;
           case 'Q': // quits game
+            bettingAction.bettingAction = 'quitGame';
             activePlayers[index] = false;
             break;
           case 'K': // kicked from game
+            bettingAction.bettingAction = 'kickedFromGame';
             activePlayers[index] = false;
             break;
         }
@@ -312,8 +352,7 @@ function replayBettingRound(timeStamp, pot, bettingRound) {
         var context = createContext(hand, actionHistory, action, bettingRound,
           potBeforeBettingAction, index + 1);
         createBettingAction(timeStamp, player, bettingAction, context);
-        actionHistory.push((index + 1) + '/' + bettingAction.bettingAction + '/' +
-          bettingAction.bettingAmount);
+        actionHistory.push(bettingAction);
       }
     });
     // Calculate number of players that see the end of the betting round, i.e.
@@ -326,6 +365,7 @@ function replayBettingRound(timeStamp, pot, bettingRound) {
     }
     i++;
   } while (newBettingActionFound && (numberOfActivePlayers > 1));
+
   switch (bettingRound) {
     case PREFLOP:
       console.log('Preflop pot calculated: ' + numberOfActivePlayers + '/' + pot);
