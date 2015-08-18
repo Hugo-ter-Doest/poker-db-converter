@@ -144,11 +144,12 @@ function gameConfiguration(channel) {
 
 // Build a context of information that can be used for deciding on the next
 // betting action
-function createContext(hand, actionHistory, currentAction, bettingRound, potBeforeBettingAction, player) {
+function createContext(hand, actionHistory, currentAction, bettingRound, bankrollAtStartOfHand, potBeforeBettingAction, player) {
   var context = {};
   context.numberOfPlayers = hand[3];
   context.playerPosition = player;
   context.potBeforeBettingAction = potBeforeBettingAction;
+  context.bankrollAtStartOfHand = bankrollAtStartOfHand;
   // Cards that are know in this bettingRound
   context.communityCards = [];
   switch (bettingRound) {
@@ -231,178 +232,184 @@ function createBettingAction(timeStamp, player, bettingAction, context) {
   }
 }
 
-function replayBettingRound(timeStamp, pot, bettingRound) {
-  numberOfBettingRounds++;
-  var numberOfActivePlayers = 0;
-  //timestamp      hand #     #players/starting potsize
-  //          dealer    #play flop    turn    river  showdn     board
-  //766303976   1   455  8  6/600   6/1200  6/1800  3/2400  3s Jc Qd 5c Ah
-  var hand = hands[timeStamp];
-  // Get the player actions of this hand and sort by player position
-  var playerActions = actions[timeStamp].
-    sort(function(a, b) {return (a[3] - b[3]);});
+function replayBettingRound(timeStamp) {
+  var pot = 0;
+  for (var bettingRound = 0; bettingRound <= RIVER; bettingRound++) {
+    numberOfBettingRounds++;
+    var numberOfActivePlayers = 0;
+    //timestamp      hand #     #players/starting potsize
+    //          dealer    #play flop    turn    river  showdn     board
+    //766303976   1   455  8  6/600   6/1200  6/1800  3/2400  3s Jc Qd 5c Ah
+    var hand = hands[timeStamp];
+    // Get the player actions of this hand and sort by player position
+    var playerActions = actions[timeStamp].
+      sort(function (a, b) {
+        return (a[3] - b[3]);
+      });
 
-  // Set the betting amount according to betting round
-  switch (bettingRound) {
-    case PREFLOP:
-    case FLOP:
-      currentBettingAmount = smallBet;
-      raiseAmount = smallBet;
-      break;
-    case TURN:
-    case RIVER:
-      currentBettingAmount = bigBet;
-      raiseAmount = bigBet;
-  }
-  var actionHistory = [];
-  var smallBlindPlayed = false;
-  var playerBets = new Array(hand[3]);
-  for (var i = 0; i < hand[3]; i++) {
-    playerBets[i] = 0;
-  }
-  var activePlayers = [];
-  for (i = 0; i < hand[3]; i++) {
-    activePlayers[i] = true;
-  }
-  // Action string is max. 3 characters long
-  // for (i = 0; i < 3; i++) {
-  i = 0;
-  var newBettingActionFound;
-  do {
-    potBeforeBettingAction = pot;
-    newBettingActionFound = false;
-    playerActions.forEach(function (action, index) {
-      // action has the form:
-      // player             #play prflop    turn         bankroll    winnings
-      //           timestamp    pos   flop       river          action     cards
-      // Marzon    766303976  8  1 Bc  bc    kc    kf      12653  300    0
-      var bettingActions = null;
-      switch (bettingRound) {
-        case PREFLOP:
-          bettingActions = action[4];
-          break;
-        case FLOP:
-          bettingActions = action[5];
-          break;
-        case TURN:
-          bettingActions = action[6];
-          break;
-        case RIVER:
-          bettingActions = action[7];
-          break;
-      }
-      if (i < bettingActions.length) {
-        newBettingActionFound = true;
-        var player = action[0];
-        var bettingAction = {};
-        bettingAction.playerPosition = index + 1;
-        bettingAction.bettingAction = bettingActions[i];
-        bettingAction.bettingAmount = 0;
-        switch (bettingAction.bettingAction) {
-          case '-': // no action; player is no longer contesting pot
-            activePlayers[index] = false;
+    // Set the betting amount according to betting round
+    switch (bettingRound) {
+      case PREFLOP:
+      case FLOP:
+        currentBettingAmount = smallBet;
+        raiseAmount = smallBet;
+        break;
+      case TURN:
+      case RIVER:
+        currentBettingAmount = bigBet;
+        raiseAmount = bigBet;
+    }
+    var actionHistory = [];
+    var smallBlindPlayed = false;
+    var playerBets = new Array(hand[3]);
+    for (var i = 0; i < hand[3]; i++) {
+      playerBets[i] = 0;
+    }
+    var activePlayers = [];
+    for (i = 0; i < hand[3]; i++) {
+      activePlayers[i] = true;
+    }
+    // Action string is max. 3 characters long
+    // for (i = 0; i < 3; i++) {
+    i = 0;
+    var newBettingActionFound;
+    var totalBets = 0;
+    do {
+      potBeforeBettingAction = pot;
+      newBettingActionFound = false;
+      playerActions.forEach(function (action, index) {
+        // action has the form:
+        // player             #play prflop    turn         bankroll    winnings
+        //           timestamp    pos   flop       river          action     cards
+        // Marzon    766303976  8  1 Bc  bc    kc    kf      12653  300    0
+        var bettingActions = null;
+        switch (bettingRound) {
+          case PREFLOP:
+            bettingActions = action[4];
             break;
-          case 'B': // blind bet (either small or big blind)
-            if (smallBlindPlayed) { // this is big blind
-              bettingAction.bettingAction = 'bigBlind';
-              bettingAction.bettingAmount = bigBlind;
-              currentBettingAmount = bigBlind;
-            }
-            else { // this is small blind
-              bettingAction.bettingAction = 'smallBlind';
-              bettingAction.bettingAmount = smallBlind;
-              smallBlindPlayed = true;
-            }
+          case FLOP:
+            bettingActions = action[5];
             break;
-          case 'f': // fold
-            bettingAction.bettingAction = 'fold';
-            activePlayers[index] = false;
+          case TURN:
+            bettingActions = action[6];
             break;
-          case 'k': // check
-            bettingAction.bettingAction = 'check';
-            break;
-          case 'b': // bet
-            bettingAction.bettingAction = 'bet';
-            bettingAction.bettingAmount = currentBettingAmount;
-            break;
-          case 'c': // call
-            bettingAction.bettingAction = 'call';
-            bettingAction.bettingAmount = currentBettingAmount - playerBets[index];
-            break;
-          case 'r': // raise
-            bettingAction.bettingAction = 'raise';
-            currentBettingAmount += raiseAmount;
-            bettingAction.bettingAmount = currentBettingAmount - playerBets[index];
-            break;
-          case 'A': // all-in
-            bettingAction.bettingAction = 'all-in';
-            bettingAction.bettingAmount = action[8] - playerBets[index];
-            break;
-          case 'Q': // quits game
-            bettingAction.bettingAction = 'quitGame';
-            activePlayers[index] = false;
-            break;
-          case 'K': // kicked from game
-            bettingAction.bettingAction = 'kickedFromGame';
-            activePlayers[index] = false;
+          case RIVER:
+            bettingActions = action[7];
             break;
         }
-        playerBets[index] += bettingAction.bettingAmount;
-        pot += bettingAction.bettingAmount;
-        var context = createContext(hand, actionHistory, action, bettingRound,
-          potBeforeBettingAction, index + 1);
-        createBettingAction(timeStamp, player, bettingAction, context);
-        actionHistory.push(bettingAction);
+        if (i < bettingActions.length) {
+          newBettingActionFound = true;
+          var player = action[0];
+          var bettingAction = {};
+          bettingAction.playerPosition = index + 1;
+          bettingAction.bettingAction = bettingActions[i];
+          bettingAction.bettingAmount = 0;
+          switch (bettingAction.bettingAction) {
+            case '-': // no action; player is no longer contesting pot
+              activePlayers[index] = false;
+              break;
+            case 'B': // blind bet (either small or big blind)
+              if (smallBlindPlayed) { // this is big blind
+                bettingAction.bettingAction = 'bigBlind';
+                bettingAction.bettingAmount = bigBlind;
+                currentBettingAmount = bigBlind;
+              }
+              else { // this is small blind
+                bettingAction.bettingAction = 'smallBlind';
+                bettingAction.bettingAmount = smallBlind;
+                smallBlindPlayed = true;
+              }
+              break;
+            case 'f': // fold
+              bettingAction.bettingAction = 'fold';
+              activePlayers[index] = false;
+              break;
+            case 'k': // check
+              bettingAction.bettingAction = 'check';
+              break;
+            case 'b': // bet
+              bettingAction.bettingAction = 'bet';
+              bettingAction.bettingAmount = currentBettingAmount;
+              break;
+            case 'c': // call
+              bettingAction.bettingAction = 'call';
+              bettingAction.bettingAmount = currentBettingAmount - playerBets[index];
+              break;
+            case 'r': // raise
+              bettingAction.bettingAction = 'raise';
+              currentBettingAmount += raiseAmount;
+              bettingAction.bettingAmount = currentBettingAmount - playerBets[index];
+              break;
+            case 'A': // all-in
+              bettingAction.bettingAction = 'all-in';
+              bettingAction.bettingAmount = action[8] - playerBets[index];
+              break;
+            case 'Q': // quits game
+              bettingAction.bettingAction = 'quitGame';
+              activePlayers[index] = false;
+              break;
+            case 'K': // kicked from game
+              bettingAction.bettingAction = 'kickedFromGame';
+              activePlayers[index] = false;
+              break;
+          }
+          playerBets[index] += bettingAction.bettingAmount;
+          totalBets += bettingAction.bettingAmount;
+          var context = createContext(hand, actionHistory, action, bettingRound,
+            action[8], potBeforeBettingAction, index + 1);
+          createBettingAction(timeStamp, player, bettingAction, context);
+          actionHistory.push(bettingAction);
+        }
+      });
+      // Calculate number of players that see the end of the betting round, i.e.
+      // did not fold, quit, etc.
+      numberOfActivePlayers = 0;
+      for (var j = 0; j < hand[3]; j++) {
+        if (activePlayers[j]) {
+          numberOfActivePlayers++;
+        }
       }
-    });
-    // Calculate number of players that see the end of the betting round, i.e.
-    // did not fold, quit, etc.
-    numberOfActivePlayers = 0;
-    for (var j = 0; j < hand[3]; j++) {
-      if (activePlayers[j]) {
-        numberOfActivePlayers++;
-      }
-    }
-    i++;
-  } while (newBettingActionFound && (numberOfActivePlayers > 1));
+      i++;
+    } while (newBettingActionFound && (numberOfActivePlayers > 1));
 
-  switch (bettingRound) {
-    case PREFLOP:
-      console.log('Preflop pot calculated: ' + numberOfActivePlayers + '/' + pot);
-      potAccordingToDB = hand[4].split('/')[1];
-      console.log('Preflop pot according to database: ' + hand[4]);
-      break;
-    case FLOP:
-      console.log('Flop pot calculated: ' + numberOfActivePlayers + '/'+ pot);
-      potAccordingToDB = hand[5].split('/')[1];
-      console.log('Flop pot according to database: ' + hand[5]);
-      break;
-    case TURN:
-      console.log('Turn pot calculated: ' + numberOfActivePlayers + '/' + pot);
-      potAccordingToDB = hand[6].split('/')[1];
-      console.log('Turn pot according to database: ' + hand[6]);
-      break;
-    case RIVER:
-      console.log('River pot calculated: ' + numberOfActivePlayers + '/' + pot);
-      potAccordingToDB = hand[7].split('/')[1];
-      console.log('River pot according to database: ' + hand[7]);
-      break;
+    // If two or more players active increase pot with totalBets
+    if ((numberOfActivePlayers > 1) || (bettingRound === RIVER)) {
+      pot += totalBets;
+    }
+
+    switch (bettingRound) {
+      case PREFLOP:
+        console.log('Preflop pot calculated: ' + numberOfActivePlayers + '/' + pot);
+        potAccordingToDB = hand[4].split('/')[1];
+        console.log('Preflop pot according to database: ' + hand[4]);
+        break;
+      case FLOP:
+        console.log('Flop pot calculated: ' + numberOfActivePlayers + '/' + pot);
+        potAccordingToDB = hand[5].split('/')[1];
+        console.log('Flop pot according to database: ' + hand[5]);
+        break;
+      case TURN:
+        console.log('Turn pot calculated: ' + numberOfActivePlayers + '/' + pot);
+        potAccordingToDB = hand[6].split('/')[1];
+        console.log('Turn pot according to database: ' + hand[6]);
+        break;
+      case RIVER:
+        console.log('River pot calculated: ' + numberOfActivePlayers + '/' + pot);
+        potAccordingToDB = hand[7].split('/')[1];
+        console.log('River pot according to database: ' + hand[7]);
+        break;
+    }
+    if (pot !== parseInt(potAccordingToDB)) {
+      console.log('Calculated pot ' + pot + ' is not equal to pot' +
+        ' according to database ' + potAccordingToDB);
+      numberOfWrongCalculatedPots++;
+    }
   }
-  if (pot !== parseInt(potAccordingToDB)) {
-    console.log('Calculated pot ' + pot + ' is not equal to pot' +
-      ' according to database ' + potAccordingToDB);
-    numberOfWrongCalculatedPots ++;
-  }
-  return(pot);
 }
 
 function replayHands() {
   Object.keys(hands).forEach(function (timeStamp) {
-    var pot = 0;
-    pot = replayBettingRound(timeStamp, pot, PREFLOP);
-    pot = replayBettingRound(timeStamp, pot, FLOP);
-    pot = replayBettingRound(timeStamp, pot, TURN);
-    replayBettingRound(timeStamp, pot, RIVER);
+    replayBettingRound(timeStamp);
   });
 }
 
