@@ -227,14 +227,16 @@ function createBettingAction(timeStamp, player, bettingAction, context) {
     entry.context = context;
     // Store the entry
     classContextPairs.push(entry);
-    console.log(JSON.stringify(entry, null, 2));
+    console.log(timeStamp + ': ' + player + ' ' + bettingAction.bettingAction + ' ' + bettingAction.bettingAmount);
     numberOfBettingActions++;
   }
 }
 
 function replayBettingRound(timeStamp) {
   var pot = 0;
-  for (var bettingRound = 0; bettingRound <= RIVER; bettingRound++) {
+  var bettingRound = 0;
+  do {
+    console.log(timeStamp + ': ' + bettingRound);
     numberOfBettingRounds++;
     var numberOfActivePlayers = 0;
     //timestamp      hand #     #players/starting potsize
@@ -269,8 +271,6 @@ function replayBettingRound(timeStamp) {
     for (i = 0; i < hand[3]; i++) {
       activePlayers[i] = true;
     }
-    // Action string is max. 3 characters long
-    // for (i = 0; i < 3; i++) {
     i = 0;
     var newBettingActionFound;
     var totalBets = 0;
@@ -376,7 +376,13 @@ function replayBettingRound(timeStamp) {
     if ((numberOfActivePlayers > 1) || (bettingRound === RIVER)) {
       pot += totalBets;
     }
-
+    else {
+      if (numberOfActivePlayers < 2) {
+        numberOfActivePlayers = 0;
+        pot = 0;
+      }
+    }
+    var potAccordingToDB = 0;
     switch (bettingRound) {
       case PREFLOP:
         console.log('Preflop pot calculated: ' + numberOfActivePlayers + '/' + pot);
@@ -404,7 +410,9 @@ function replayBettingRound(timeStamp) {
         ' according to database ' + potAccordingToDB);
       numberOfWrongCalculatedPots++;
     }
-  }
+    bettingRound++;
+    console.log('\n');
+  } while ((bettingRound <= RIVER) && (numberOfActivePlayers > 1));
 }
 
 function replayHands() {
