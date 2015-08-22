@@ -103,6 +103,8 @@ channelToFiles = {
   'tourney': []
 };
 
+var smallBlind, bigBlind, smallBet, bigBet;
+
 // Read database files
 function readPokerDB(channel) {
   var pokerDatabases = channelToFiles[channel];
@@ -212,7 +214,7 @@ function createContext(hand, actionHistory, currentAction, bettingRound, bankrol
 }
 
 // Write poker actions in the form (action, context)
-function createBettingAction(timeStamp, player, bettingAction, context) {
+function createBettingAction(timeStamp, player, bankRoll, bettingAction, context) {
   // We are only interested in betting actions for which the hole cards are
   // known
   if (context.holeCards) {
@@ -227,42 +229,66 @@ function createBettingAction(timeStamp, player, bettingAction, context) {
     entry.context = context;
     // Store the entry
     classContextPairs.push(entry);
-    console.log(timeStamp + ': ' + player + ' ' + bettingAction.bettingAction + ' ' + bettingAction.bettingAmount);
     numberOfBettingActions++;
   }
+  console.log('hand ' + timeStamp + ': ' + player + ' bankroll: ' + bankRoll +
+    ' ' + bettingAction.bettingAction + ' ' + bettingAction.bettingAmount);
+}
+
+function setCharAt(str,index,chr) {
+  if(index > str.length-1) return str;
+  return str.substr(0,index) + chr + str.substr(index+1);
 }
 
 function replayBettingRound(timeStamp) {
   var pot = 0;
   var bettingRound = 0;
+  var currentBettingAmount = 0;
+  //timestamp      hand #     #players/starting potsize
+  //          dealer    #play flop    turn    river  showdn     board
+  //766303976   1   455  8  6/600   6/1200  6/1800  3/2400  3s Jc Qd 5c Ah
+  var hand = hands[timeStamp];
+  // Get the player actions of this hand and sort by player position
+  var playerActions = actions[timeStamp].
+    sort(function (a, b) {
+      return (parseInt(a[3]) - parseInt(b[3]));
+    });
+  // Sometimes the Big Blind is not correctly recorded in the PREFLOP
+  // --> set a flag
+  var smallBlindIsNotPlayed = (playerActions[1][4][0] !== 'B');
+  var playerBankRolls = [];
+  for (var i = 0; i < hand[3]; i++) {
+    playerBankRolls[i] = playerActions[i][8];
+  }
   do {
-    console.log(timeStamp + ': ' + bettingRound);
-    numberOfBettingRounds++;
-    var numberOfActivePlayers = 0;
-    //timestamp      hand #     #players/starting potsize
-    //          dealer    #play flop    turn    river  showdn     board
-    //766303976   1   455  8  6/600   6/1200  6/1800  3/2400  3s Jc Qd 5c Ah
-    var hand = hands[timeStamp];
-    // Get the player actions of this hand and sort by player position
-    var playerActions = actions[timeStamp].
-      sort(function (a, b) {
-        return (a[3] - b[3]);
-      });
-
-    // Set the betting amount according to betting round
     switch (bettingRound) {
       case PREFLOP:
+        console.log('hand ' + timeStamp + ': PREFLOP');
+        break;
       case FLOP:
-        currentBettingAmount = smallBet;
-        raiseAmount = smallBet;
+        console.log('hand ' + timeStamp +': FLOP');
         break;
       case TURN:
+        console.log('hand ' + timeStamp +': TURN');
+        break;
       case RIVER:
-        currentBettingAmount = bigBet;
-        raiseAmount = bigBet;
+        console.log('hand ' + timeStamp +': RIVER');
+        break;
+    }
+    numberOfBettingRounds++;
+    var numberOfActivePlayers = 0;
+    // Set the betting amount according to betting round
+    if (bettingRound <= FLOP) {
+      currentBettingAmount = smallBet;
+      raiseAmount = smallBet;
+    }
+    else {
+      currentBettingAmount = bigBet;
+      raiseAmount = bigBet;
     }
     var actionHistory = [];
     var smallBlindPlayed = false;
+    var bigBlindPlayed = false;
     var playerBets = new Array(hand[3]);
     for (var i = 0; i < hand[3]; i++) {
       playerBets[i] = 0;
@@ -282,21 +308,7 @@ function replayBettingRound(timeStamp) {
         // player             #play prflop    turn         bankroll    winnings
         //           timestamp    pos   flop       river          action     cards
         // Marzon    766303976  8  1 Bc  bc    kc    kf      12653  300    0
-        var bettingActions = null;
-        switch (bettingRound) {
-          case PREFLOP:
-            bettingActions = action[4];
-            break;
-          case FLOP:
-            bettingActions = action[5];
-            break;
-          case TURN:
-            bettingActions = action[6];
-            break;
-          case RIVER:
-            bettingActions = action[7];
-            break;
-        }
+        var bettingActions = action[4 + bettingRound];
         if (i < bettingActions.length) {
           newBettingActionFound = true;
           var player = action[0];
@@ -309,15 +321,25 @@ function replayBettingRound(timeStamp) {
               activePlayers[index] = false;
               break;
             case 'B': // blind bet (either small or big blind)
-              if (smallBlindPlayed) { // this is big blind
+              if (smallBlindPlayed || smallBlindIsNotPlayed) { // this is big blind
                 bettingAction.bettingAction = 'bigBlind';
-                bettingAction.bettingAmount = bigBlind;
-                currentBettingAmount = bigBlind;
+                bigBlindPlayed = true;
+                if (playerBankRolls[index] >= bigBlind) {
+                  bettingAction.bettingAmount = bigBlind;
+                }
+                else {
+                  bettingAction.bettingAmount = playerBankRolls[index];
+                }
               }
               else { // this is small blind
                 bettingAction.bettingAction = 'smallBlind';
-                bettingAction.bettingAmount = smallBlind;
                 smallBlindPlayed = true;
+                if (playerBankRolls[index] >= smallBlind) {
+                  bettingAction.bettingAmount = smallBlind;
+                }
+                else {
+                  bettingAction.bettingAmount = playerBankRolls[index];
+                }
               }
               break;
             case 'f': // fold
@@ -329,20 +351,42 @@ function replayBettingRound(timeStamp) {
               break;
             case 'b': // bet
               bettingAction.bettingAction = 'bet';
-              bettingAction.bettingAmount = currentBettingAmount;
+              if (playerBankRolls[index] >= (currentBettingAmount - playerBets[index])) {
+                bettingAction.bettingAmount = currentBettingAmount - playerBets[index];
+              }
+              else {
+                bettingAction.bettingAmount = playerBankRolls[index];
+                currentBettingAmount = playerBankRolls[index];
+              }
               break;
             case 'c': // call
               bettingAction.bettingAction = 'call';
-              bettingAction.bettingAmount = currentBettingAmount - playerBets[index];
+              if (playerBankRolls[index] >= (currentBettingAmount - playerBets[index])) {
+                bettingAction.bettingAmount = currentBettingAmount - playerBets[index];
+              }
+              else {
+                bettingAction.bettingAmount = playerBets[index];
+              }
               break;
             case 'r': // raise
               bettingAction.bettingAction = 'raise';
-              currentBettingAmount += raiseAmount;
-              bettingAction.bettingAmount = currentBettingAmount - playerBets[index];
+              if (playerBankRolls[index] >= (currentBettingAmount + raiseAmount - playerBets[index])) {
+                currentBettingAmount += raiseAmount;
+                bettingAction.bettingAmount = currentBettingAmount - playerBets[index];
+              }
+              else {
+                bettingAction.bettingAmount = playerBankRolls[index] - playerBets[index];
+                currentBettingAmount += playerBankRolls[index] - playerBets[index];
+              }
               break;
             case 'A': // all-in
               bettingAction.bettingAction = 'all-in';
-              bettingAction.bettingAmount = action[8] - playerBets[index];
+              if (playerBankRolls[index] < (currentBettingAmount - playerBets[index])) {
+                bettingAction.bettingAmount = playerBankRolls[index];
+              }
+              else { // Consider this a call
+                bettingAction.bettingAmount = currentBettingAmount - playerBets[index];
+              }
               break;
             case 'Q': // quits game
               bettingAction.bettingAction = 'quitGame';
@@ -353,11 +397,19 @@ function replayBettingRound(timeStamp) {
               activePlayers[index] = false;
               break;
           }
+          // Is player going all-in ?
+          if (bettingAction.bettingAmount > playerBankRolls[index]) {
+            bettingAction.bettingAmount = playerBankRolls[index];
+            playerBankRolls[index] = 0;
+          }
+          else {
+            playerBankRolls[index] -= bettingAction.bettingAmount;
+          }
           playerBets[index] += bettingAction.bettingAmount;
           totalBets += bettingAction.bettingAmount;
           var context = createContext(hand, actionHistory, action, bettingRound,
             action[8], potBeforeBettingAction, index + 1);
-          createBettingAction(timeStamp, player, bettingAction, context);
+          createBettingAction(timeStamp, player, playerBankRolls[index], bettingAction, context);
           actionHistory.push(bettingAction);
         }
       });
