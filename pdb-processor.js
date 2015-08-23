@@ -214,7 +214,7 @@ function createContext(hand, actionHistory, currentAction, bettingRound, bankrol
 }
 
 // Write poker actions in the form (action, context)
-function createBettingAction(timeStamp, player, bankRoll, bettingAction, context) {
+function createBettingAction(timeStamp, player, bankRoll, bettingAction, context, totalBet) {
   // We are only interested in betting actions for which the hole cards are
   // known
   if (context.holeCards) {
@@ -232,7 +232,8 @@ function createBettingAction(timeStamp, player, bankRoll, bettingAction, context
     numberOfBettingActions++;
   }
   console.log('hand ' + timeStamp + ': ' + player + ' bankroll: ' + bankRoll +
-    ' ' + bettingAction.bettingAction + ' ' + bettingAction.bettingAmount);
+    ' ' + bettingAction.bettingAction + ' ' + bettingAction.bettingAmount +
+    ' totalBet: ' + totalBet);
 }
 
 function setCharAt(str,index,chr) {
@@ -258,7 +259,7 @@ function replayBettingRound(timeStamp) {
   var smallBlindIsNotPlayed = (playerActions[1][4][0] !== 'B');
   var playerBankRolls = [];
   for (var i = 0; i < hand[3]; i++) {
-    playerBankRolls[i] = playerActions[i][8];
+    playerBankRolls[i] = parseInt(playerActions[i][8]);
   }
   do {
     switch (bettingRound) {
@@ -375,8 +376,8 @@ function replayBettingRound(timeStamp) {
                 bettingAction.bettingAmount = currentBettingAmount - playerBets[index];
               }
               else {
-                bettingAction.bettingAmount = playerBankRolls[index] - playerBets[index];
-                currentBettingAmount += playerBankRolls[index] - playerBets[index];
+                currentBettingAmount += playerBankRolls[index];
+                bettingAction.bettingAmount = playerBankRolls[index];
               }
               break;
             case 'A': // all-in
@@ -397,19 +398,12 @@ function replayBettingRound(timeStamp) {
               activePlayers[index] = false;
               break;
           }
-          // Is player going all-in ?
-          if (bettingAction.bettingAmount > playerBankRolls[index]) {
-            bettingAction.bettingAmount = playerBankRolls[index];
-            playerBankRolls[index] = 0;
-          }
-          else {
-            playerBankRolls[index] -= bettingAction.bettingAmount;
-          }
+          playerBankRolls[index] = playerBankRolls[index] - bettingAction.bettingAmount;
           playerBets[index] += bettingAction.bettingAmount;
           totalBets += bettingAction.bettingAmount;
           var context = createContext(hand, actionHistory, action, bettingRound,
             action[8], potBeforeBettingAction, index + 1);
-          createBettingAction(timeStamp, player, playerBankRolls[index], bettingAction, context);
+          createBettingAction(timeStamp, player, playerBankRolls[index], bettingAction, context, playerBets[index]);
           actionHistory.push(bettingAction);
         }
       });
