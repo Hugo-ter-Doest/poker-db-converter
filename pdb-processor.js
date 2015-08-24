@@ -146,12 +146,12 @@ function gameConfiguration(channel) {
 
 // Build a context of information that can be used for deciding on the next
 // betting action
-function createContext(hand, actionHistory, currentAction, bettingRound, bankrollAtStartOfHand, potBeforeBettingAction, player) {
+function createContext(hand, actionHistory, currentAction, bettingRound, bankRolls, potBeforeBettingAction, player) {
   var context = {};
   context.numberOfPlayers = hand[3];
   context.playerPosition = player;
   context.potBeforeBettingAction = potBeforeBettingAction;
-  context.bankrollAtStartOfHand = bankrollAtStartOfHand;
+  context.bankRollsBeforeBettingAction = bankRolls;
   // Cards that are know in this bettingRound
   context.communityCards = [];
   switch (bettingRound) {
@@ -214,7 +214,7 @@ function createContext(hand, actionHistory, currentAction, bettingRound, bankrol
 }
 
 // Write poker actions in the form (action, context)
-function createBettingAction(timeStamp, player, bankRoll, bettingAction, context, totalBet) {
+function createBettingAction(timeStamp, player, bettingAction, context, totalBet) {
   // We are only interested in betting actions for which the hole cards are
   // known
   if (context.holeCards) {
@@ -231,7 +231,8 @@ function createBettingAction(timeStamp, player, bankRoll, bettingAction, context
     classContextPairs.push(entry);
     numberOfBettingActions++;
   }
-  console.log('hand ' + timeStamp + ': ' + player + ' bankroll: ' + bankRoll +
+  console.log('hand ' + timeStamp + ': ' + player + ' bankroll: ' +
+    context.bankRollsBeforeBettingAction[bettingAction.playerPosition - 1] +
     ' ' + bettingAction.bettingAction + ' ' + bettingAction.bettingAmount +
     ' totalBet: ' + totalBet);
 }
@@ -376,7 +377,7 @@ function replayBettingRound(timeStamp) {
                 bettingAction.bettingAmount = currentBettingAmount - playerBets[index];
               }
               else {
-                currentBettingAmount += playerBankRolls[index];
+                currentBettingAmount += playerBankRolls[index] - raiseAmount;
                 bettingAction.bettingAmount = playerBankRolls[index];
               }
               break;
@@ -398,12 +399,12 @@ function replayBettingRound(timeStamp) {
               activePlayers[index] = false;
               break;
           }
-          playerBankRolls[index] = playerBankRolls[index] - bettingAction.bettingAmount;
           playerBets[index] += bettingAction.bettingAmount;
           totalBets += bettingAction.bettingAmount;
           var context = createContext(hand, actionHistory, action, bettingRound,
-            action[8], potBeforeBettingAction, index + 1);
-          createBettingAction(timeStamp, player, playerBankRolls[index], bettingAction, context, playerBets[index]);
+            playerBankRolls, potBeforeBettingAction, index + 1);
+          playerBankRolls[index] = playerBankRolls[index] - bettingAction.bettingAmount;
+          createBettingAction(timeStamp, player, bettingAction, context, playerBets[index]);
           actionHistory.push(bettingAction);
         }
       });
