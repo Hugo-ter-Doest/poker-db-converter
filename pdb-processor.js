@@ -21,8 +21,8 @@ var fs = require('fs');
 var underscore = require('underscore');
 
 // Poker hands database
-var workspace = '/home/hugo/Workspace/';
-//var workspace = '/Workspace/';
+//var workspace = '/home/hugo/Workspace/';
+var workspace = '/Workspace/';
 var base = workspace + 'poker-db/';
 var output_base = workspace + 'poker-db-converter/data/';
 
@@ -42,6 +42,8 @@ var PREFLOP = 0;
 var FLOP = 1;
 var TURN = 2;
 var RIVER = 3;
+
+var nameOfBettingRound = ['Preflop', 'Flop', 'Turn', 'River'];
 
 channels = [
   '7stud',
@@ -146,11 +148,14 @@ function gameConfiguration(channel) {
 
 // Build a context of information that can be used for deciding on the next
 // betting action
-function createContext(hand, actionHistory, currentAction, bettingRound, bankRolls, potBeforeBettingAction, player) {
+function createContext(hand, actionHistory, currentAction, bettingRound, bankRolls, potBeforeBettingAction, playerBets,
+                       betsCurrentRound, player) {
   var context = {};
   context.numberOfPlayers = hand[3];
   context.playerPosition = player;
-  context.potBeforeBettingAction = potBeforeBettingAction;
+  context.potBeforeBettingAction = potBeforeBettingAction
+  context.playerBets = playerBets;
+  context.betsCurrentRound = betsCurrentRound;
   context.bankRollsBeforeBettingAction = bankRolls;
   // Cards that are know in this bettingRound
   context.communityCards = [];
@@ -217,7 +222,8 @@ function createContext(hand, actionHistory, currentAction, bettingRound, bankRol
 function createBettingAction(timeStamp, player, bettingAction, context, totalBet) {
   // We are only interested in betting actions for which the hole cards are
   // known
-  if (context.holeCards) {
+  if ((context.holeCards) &&
+    (['bet', 'call', 'check', 'fold', 'raise', 'all-in'].indexOf(bettingAction.bettingAction) > -1)) {
     var entry = {};
     // db values refer to the original database files (keys in fact)
     entry.db = {};
@@ -238,8 +244,10 @@ function createBettingAction(timeStamp, player, bettingAction, context, totalBet
 }
 
 function setCharAt(str,index,chr) {
-  if(index > str.length-1) return str;
-  return str.substr(0,index) + chr + str.substr(index+1);
+  if(index > str.length - 1) {
+    return str;
+  }
+  return str.substr(0, index) + chr + str.substr(index + 1);
 }
 
 function replayBettingRound(timeStamp) {
@@ -263,20 +271,7 @@ function replayBettingRound(timeStamp) {
     playerBankRolls[i] = parseInt(playerActions[i][8]);
   }
   do {
-    switch (bettingRound) {
-      case PREFLOP:
-        console.log('hand ' + timeStamp + ': PREFLOP');
-        break;
-      case FLOP:
-        console.log('hand ' + timeStamp +': FLOP');
-        break;
-      case TURN:
-        console.log('hand ' + timeStamp +': TURN');
-        break;
-      case RIVER:
-        console.log('hand ' + timeStamp +': RIVER');
-        break;
-    }
+    console.log('Hand ' + timeStamp + ' ' + nameOfBettingRound[bettingRound]);
     numberOfBettingRounds++;
     var numberOfActivePlayers = 0;
     // Set the betting amount according to betting round
@@ -315,10 +310,10 @@ function replayBettingRound(timeStamp) {
           newBettingActionFound = true;
           var player = action[0];
           var bettingAction = {};
+          bettingAction.bettingAction = '';
           bettingAction.playerPosition = index + 1;
-          bettingAction.bettingAction = bettingActions[i];
           bettingAction.bettingAmount = 0;
-          switch (bettingAction.bettingAction) {
+          switch (bettingActions[i]) {
             case '-': // no action; player is no longer contesting pot
               activePlayers[index] = false;
               break;
@@ -399,11 +394,14 @@ function replayBettingRound(timeStamp) {
               activePlayers[index] = false;
               break;
           }
+          // Create context of the moment right before the betting action
+          var context = createContext(hand, actionHistory, action, bettingRound,
+            playerBankRolls, potBeforeBettingAction, playerBets, totalBets, index + 1);
+          // Register betting amount
           playerBets[index] += bettingAction.bettingAmount;
           totalBets += bettingAction.bettingAmount;
-          var context = createContext(hand, actionHistory, action, bettingRound,
-            playerBankRolls, potBeforeBettingAction, index + 1);
           playerBankRolls[index] = playerBankRolls[index] - bettingAction.bettingAmount;
+          // Create betting action
           createBettingAction(timeStamp, player, bettingAction, context, playerBets[index]);
           actionHistory.push(bettingAction);
         }
@@ -429,29 +427,10 @@ function replayBettingRound(timeStamp) {
         pot = 0;
       }
     }
-    var potAccordingToDB = 0;
-    switch (bettingRound) {
-      case PREFLOP:
-        console.log('Preflop pot calculated: ' + numberOfActivePlayers + '/' + pot);
-        potAccordingToDB = hand[4].split('/')[1];
-        console.log('Preflop pot according to database: ' + hand[4]);
-        break;
-      case FLOP:
-        console.log('Flop pot calculated: ' + numberOfActivePlayers + '/' + pot);
-        potAccordingToDB = hand[5].split('/')[1];
-        console.log('Flop pot according to database: ' + hand[5]);
-        break;
-      case TURN:
-        console.log('Turn pot calculated: ' + numberOfActivePlayers + '/' + pot);
-        potAccordingToDB = hand[6].split('/')[1];
-        console.log('Turn pot according to database: ' + hand[6]);
-        break;
-      case RIVER:
-        console.log('River pot calculated: ' + numberOfActivePlayers + '/' + pot);
-        potAccordingToDB = hand[7].split('/')[1];
-        console.log('River pot according to database: ' + hand[7]);
-        break;
-    }
+    var potAndNumberOfPlayers = hand[4 + bettingRound];
+    var potAccordingToDB = potAndNumberOfPlayers.split('/')[1];
+    console.log('Pot calculated: ' + numberOfActivePlayers + '/' + pot);
+    console.log('Pot according to database: ' + potAndNumberOfPlayers);
     if (pot !== parseInt(potAccordingToDB)) {
       console.log('Calculated pot ' + pot + ' is not equal to pot' +
         ' according to database ' + potAccordingToDB);
