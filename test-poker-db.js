@@ -25,6 +25,29 @@ var FLOP = 1;
 var TURN = 2;
 var RIVER = 3;
 
+/**
+ * @return {number}
+ */
+function Similarity(context1, context2) {
+  var similarity = 0;
+  // Test whether pots are in the same magnitude
+  if (math.round(math.log(context1.potBeforeBettingAction, 10)) === math.round(math.log(context2.pot, 10))) {
+    similarity++;
+  }
+  if (context1.bettingRound === context2.bettingRound) {
+    similarity++;
+  }
+  if (math.abs(context2.numberOfPlayers - context1.numberOfPlayers) < 3) {
+    similarity++;
+  }
+  context2.communityCards.forEach(function(card) {
+    if (context1.communityCards.indexOf(card) > -1) {
+      similarity++;
+    }
+  });
+  return(similarity);
+}
+
 function classifyHand(holeCard1, holeCard2, bettingRound, communityCards, pot, numberOfPlayers) {
   // Find class context pairs for these hole card
   var matches = [];
