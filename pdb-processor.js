@@ -21,8 +21,8 @@ var fs = require('fs');
 var underscore = require('underscore');
 
 // Poker hands database
-//var workspace = '/home/hugo/Workspace/';
-var workspace = '/Workspace/';
+var workspace = '/home/hugo/Workspace/';
+//var workspace = '/Workspace/';
 var base = workspace + 'poker-db/';
 var output_base = workspace + 'poker-db-converter/data/';
 
@@ -90,7 +90,7 @@ channelToFiles = {
   '7studhi': [],
   'botsonly': [],
   'h1-nobots': [],
-  'holdem': ['199504'],
+  'holdem': ['199504', '199505'],
   'holdemii': [],
   'holdem1': ['199808'],
   'holdem2': [],
@@ -219,11 +219,15 @@ function createContext(hand, actionHistory, currentAction, bettingRound, bankRol
 }
 
 // Write poker actions in the form (action, context)
-function createBettingAction(timeStamp, player, bettingAction, context, totalBet) {
-  // We are only interested in betting actions for which the hole cards are
-  // known
+function createBettingAction(timeStamp, player, bettingAction, context, totalBet, potWinning) {
+  // We are only interested in betting actions for which
+  // - the hole cards are known,
+  // - the betting action is a real poker action (and not something like quit
+  //   or kickedFromGame)
+  // - and the player wins (at least a part of the) pot
   if ((context.holeCards) &&
-    (['bet', 'call', 'check', 'fold', 'raise', 'all-in'].indexOf(bettingAction.bettingAction) > -1)) {
+    (['bet', 'call', 'check', 'fold', 'raise', 'all-in'].indexOf(bettingAction.bettingAction) > -1) &&
+    (potWinning > 0)) {
     var entry = {};
     // db values refer to the original database files (keys in fact)
     entry.db = {};
@@ -267,8 +271,10 @@ function replayBettingRound(timeStamp) {
   // --> set a flag
   var smallBlindIsNotPlayed = (playerActions[1][4][0] !== 'B');
   var playerBankRolls = [];
+  var totalHandAction = [];
   for (var i = 0; i < hand[3]; i++) {
     playerBankRolls[i] = parseInt(playerActions[i][8]);
+    totalHandAction[i] = 0;
   }
   do {
     console.log('Hand ' + timeStamp + ' ' + nameOfBettingRound[bettingRound]);
@@ -316,6 +322,7 @@ function replayBettingRound(timeStamp) {
           switch (bettingActions[i]) {
             case '-': // no action; player is no longer contesting pot
               activePlayers[index] = false;
+              bettingAction.bettingAction = '-';
               break;
             case 'B': // blind bet (either small or big blind)
               if (smallBlindPlayed || smallBlindIsNotPlayed) { // this is big blind
@@ -372,7 +379,7 @@ function replayBettingRound(timeStamp) {
                 bettingAction.bettingAmount = currentBettingAmount - playerBets[index];
               }
               else {
-                currentBettingAmount += playerBankRolls[index] - raiseAmount;
+                currentBettingAmount = playerBets[index] + playerBankRolls[index];
                 bettingAction.bettingAmount = playerBankRolls[index];
               }
               break;
@@ -382,7 +389,8 @@ function replayBettingRound(timeStamp) {
                 bettingAction.bettingAmount = playerBankRolls[index];
               }
               else { // Consider this a call
-                bettingAction.bettingAmount = currentBettingAmount - playerBets[index];
+                //bettingAction.bettingAmount = currentBettingAmount -
+                // playerBets[index];
               }
               break;
             case 'Q': // quits game
@@ -399,10 +407,12 @@ function replayBettingRound(timeStamp) {
             playerBankRolls, potBeforeBettingAction, playerBets, totalBets, index + 1);
           // Register betting amount
           playerBets[index] += bettingAction.bettingAmount;
+          totalHandAction[index] += bettingAction.bettingAmount;
           totalBets += bettingAction.bettingAmount;
           playerBankRolls[index] = playerBankRolls[index] - bettingAction.bettingAmount;
           // Create betting action
-          createBettingAction(timeStamp, player, bettingAction, context, playerBets[index]);
+          createBettingAction(timeStamp, player, bettingAction, context,
+            playerBets[index], playerActions[index][10]);
           actionHistory.push(bettingAction);
         }
       });
@@ -429,16 +439,29 @@ function replayBettingRound(timeStamp) {
     }
     var potAndNumberOfPlayers = hand[4 + bettingRound];
     var potAccordingToDB = potAndNumberOfPlayers.split('/')[1];
-    console.log('Pot calculated: ' + numberOfActivePlayers + '/' + pot);
-    console.log('Pot according to database: ' + potAndNumberOfPlayers);
-    if (pot !== parseInt(potAccordingToDB)) {
+    if (pot === parseInt(potAccordingToDB)) {
+      console.log('Pot calculated: ' + numberOfActivePlayers + '/' + pot);
+    }
+    else {
       console.log('Calculated pot ' + pot + ' is not equal to pot' +
         ' according to database ' + potAccordingToDB);
       numberOfWrongCalculatedPots++;
     }
-    bettingRound++;
     console.log('\n');
+    bettingRound++;
   } while ((bettingRound <= RIVER) && (numberOfActivePlayers > 1));
+  console.log('\n');
+  // Compare total action in the hand per player
+  for (i = 0; i < hand[3]; i++) {
+    if (totalHandAction[i] === parseInt(playerActions[i][9])) {
+      console.log(playerActions[i][0] + ' total hand action: ' + totalHandAction[i]);
+    }
+    else {
+      console.log(playerActions[i][0] + ' total hand action incorrect: ' +
+        totalHandAction[i] + ' --> should be: ' + playerActions[i][9]);
+    }
+  }
+  console.log('\n');
 }
 
 function replayHands() {
