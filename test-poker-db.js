@@ -28,18 +28,47 @@ var RIVER = 3;
 /**
  * @return {number}
  */
+// context1 is a context available in the database
+// context2 is a context that should be classified, it may be icncomplete
 function Similarity(context1, context2) {
   var similarity = 0;
-  // Test whether pots are in the same magnitude
-  if (math.round(math.log(context1.potBeforeBettingAction, 10)) === math.round(math.log(context2.pot, 10))) {
-    similarity++;
+  // Compare number of players
+  if (context2.numberOfPlayers) {
+    if (math.abs(context2.numberOfPlayers - context1.numberOfPlayers) < 3) {
+      similarity++;
+    }
   }
-  if (context1.bettingRound === context2.bettingRound) {
-    similarity++;
+
+  // Compare number of active players
+  if (context2.numberOfActivePlayers) {
+    if (context1.numberOfActivePlayers === context2.numberOfActivePlayers) {
+      similarity++;
+    }
   }
-  if (math.abs(context2.numberOfPlayers - context1.numberOfPlayers) < 3) {
-    similarity++;
+
+  // Compare player position
+  if (context2.playerPosition) {
+    if (context1.numberOfPlayers === context2.numberOfPlayers) {
+      similarity++;
+    }
   }
+
+  // Compare pot before betting action
+  if (context2.potBeforeBettingAction) {
+    // Test whether pots are in the same magnitude
+    if (math.round(math.log(context1.potBeforeBettingAction, 10)) === math.round(math.log(context2.pot, 10))) {
+      similarity++;
+    }
+  }
+
+  // Compare betting round
+  if (context2.potBeforeBettingAction) {
+    if (context1.bettingRound === context2.bettingRound) {
+      similarity++;
+    }
+  }
+
+  // Compare community cards
   context2.communityCards.forEach(function(card) {
     if (context1.communityCards.indexOf(card) > -1) {
       similarity++;

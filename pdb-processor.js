@@ -149,9 +149,10 @@ function gameConfiguration(channel) {
 // Build a context of information that can be used for deciding on the next
 // betting action
 function createContext(hand, actionHistory, currentAction, bettingRound, bankRolls, potBeforeBettingAction, playerBets,
-                       betsCurrentRound, player) {
+                       betsCurrentRound, player, numberOfActivePlayers) {
   var context = {};
   context.numberOfPlayers = hand[3];
+  context.numberOfActivePlayers = numberOfActivePlayers;
   context.playerPosition = player;
   context.potBeforeBettingAction = potBeforeBettingAction
   context.playerBets = playerBets;
@@ -404,7 +405,8 @@ function replayBettingRound(timeStamp) {
           }
           // Create context of the moment right before the betting action
           var context = createContext(hand, actionHistory, action, bettingRound,
-            playerBankRolls, potBeforeBettingAction, playerBets, totalBets, index + 1);
+            playerBankRolls, potBeforeBettingAction, playerBets, totalBets,
+            index + 1, numberOfActivePlayers);
           // Register betting amount
           playerBets[index] += bettingAction.bettingAmount;
           totalHandAction[index] += bettingAction.bettingAmount;
@@ -414,16 +416,15 @@ function replayBettingRound(timeStamp) {
           createBettingAction(timeStamp, player, bettingAction, context,
             playerBets[index], playerActions[index][10]);
           actionHistory.push(bettingAction);
+          // Calculate number of players after the current betting action
+          numberOfActivePlayers = 0;
+          for (var j = 0; j < hand[3]; j++) {
+            if (activePlayers[j]) {
+              numberOfActivePlayers++;
+            }
+          }
         }
       });
-      // Calculate number of players that see the end of the betting round, i.e.
-      // did not fold, quit, etc.
-      numberOfActivePlayers = 0;
-      for (var j = 0; j < hand[3]; j++) {
-        if (activePlayers[j]) {
-          numberOfActivePlayers++;
-        }
-      }
       i++;
     } while (newBettingActionFound && (numberOfActivePlayers > 1));
 
