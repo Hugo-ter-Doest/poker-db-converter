@@ -227,8 +227,8 @@ function createBettingAction(timeStamp, player, bettingAction, context, totalBet
   //   or kickedFromGame)
   // - and the player wins (at least a part of the) pot
   if ((context.holeCards) &&
-    (['bet', 'call', 'check', 'fold', 'raise', 'all-in'].indexOf(bettingAction.bettingAction) > -1) &&
-    (potWinning > 0)) {
+    (['bet', 'call', 'check', 'fold', 'raise', 'all-in'].indexOf(bettingAction.bettingAction) > -1) /*&&
+    (potWinning > 0)*/) {
     var entry = {};
     // db values refer to the original database files (keys in fact)
     entry.db = {};
