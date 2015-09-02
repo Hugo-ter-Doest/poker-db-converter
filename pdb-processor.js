@@ -90,7 +90,7 @@ channelToFiles = {
   '7studhi': [],
   'botsonly': [],
   'h1-nobots': [],
-  'holdem': ['199504', '199505'],
+  'holdem': ['199504'],
   'holdemii': [],
   'holdem1': ['199808'],
   'holdem2': [],
@@ -166,7 +166,7 @@ function createContext(hand, actionHistory, currentAction, bettingRound, bankRol
       break;
     case FLOP:
       context.bettingRound = 'flop';
-      if (hand.length === 11) {
+      if (hand.length >= 11) {
         context.communityCards.push(hand[8]);
         context.communityCards.push(hand[9]);
         context.communityCards.push(hand[10]);
@@ -177,7 +177,7 @@ function createContext(hand, actionHistory, currentAction, bettingRound, bankRol
       break;
     case TURN:
       context.bettingRound = 'turn';
-      if (hand.length === 12) {
+      if (hand.length >= 12) {
         context.communityCards.push(hand[8]);
         context.communityCards.push(hand[9]);
         context.communityCards.push(hand[10]);
