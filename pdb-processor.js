@@ -21,8 +21,8 @@ var fs = require('fs');
 var underscore = require('underscore');
 
 // Poker hands database
-var workspace = '/home/hugo/Workspace/';
-//var workspace = '/Workspace/';
+//var workspace = '/home/hugo/Workspace/';
+var workspace = '/Workspace/';
 var base = workspace + 'poker-db/';
 var output_base = workspace + 'poker-db-converter/data/';
 
