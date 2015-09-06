@@ -19,7 +19,8 @@
 var math = require('mathjs');
 
 var classContextPairs = require('./data/holdem.json');
-var classifyContext = require('./SimilarityClassifier');
+var similarityClassifier = require('./SimilarityClassifier');
+var randomClassifier = require('./RandomClassifier');
 
 var sizeOfTrainingSet = 0.7;
 var trainingSet = [];
@@ -49,21 +50,26 @@ function createContext(holeCards, bettingRound, communityCards, potBeforeBetting
 }
 
 function testSimilarityMeasure() {
-  var recallBettingAction = 0;
-  var recallBettingActionPlusAmount = 0;
+  var classifiers = ['similarity', 'random'];
+  var recallBettingAction = [0, 0];
+  var recallBettingActionPlusAmount = [0, 0];
   var numberOfTestsProcessed = 0;
   splitIntoTestAndTrainSet();
   testingSet.forEach(function(pair) {
-    var classification = classifyContext(trainingSet, pair.context);
-    if (classification.class.bettingAction === pair.class.bettingAction) {
-      recallBettingAction++;
-      if (classification.class.bettingAmount === pair.class.bettingAmount) {
-        recallBettingActionPlusAmount++;
+    var classificationSimilarity = similarityClassifier(trainingSet, pair.context);
+    var classificationRandom = randomClassifier(trainingSet, pair.context);
+    [classificationSimilarity, classificationRandom].forEach(function(classification, index) {
+      if (classification.class.bettingAction === pair.class.bettingAction) {
+        recallBettingAction[index]++;
+        if (classification.class.bettingAmount === pair.class.bettingAmount) {
+          recallBettingActionPlusAmount[index]++;
+        }
       }
-    }
+      console.log(classifiers[index] + ' recall betting actions: ' + math.round(100 * recallBettingAction[index] / numberOfTestsProcessed) + ' (' + numberOfTestsProcessed + ' tests processed)');
+      console.log(classifiers[index] + ' recall betting actions including' +
+        ' betting amounts: ' + math.round(100 * recallBettingActionPlusAmount[index] / numberOfTestsProcessed));
+    });
     numberOfTestsProcessed++;
-    console.log('Recall betting actions: ' + math.round(100 * recallBettingAction / numberOfTestsProcessed) + ' (' + numberOfTestsProcessed + ' tests processed)');
-    console.log('Recall betting actions including betting amounts: ' + math.round(100 * recallBettingActionPlusAmount / numberOfTestsProcessed));
   });
 }
 
