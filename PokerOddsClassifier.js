@@ -18,11 +18,18 @@
 
 var suites = ['clubs', 'spades', 'diamonds', 'hearts'];
 
-var cards = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen',
+var numbers = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen',
   'King', 'Ace'];
 
 var handRanks = ['High card', 'Pair', 'Two pair', 'Three of a kind', 'Straight',
   'Flush', 'Full house', 'Four of a kind', 'Straight flush', 'Royal flush'];
+
+
+function Card(suite, number, isHoleCard) {
+  this.suite = suite;
+  this.number = number;
+  this.isHoleCard = isHoleCard;
+}
 
 // Calculates future pussible hand ranks based on community cards
 function calculateFutureHandRanks(cards) {
@@ -31,7 +38,9 @@ function calculateFutureHandRanks(cards) {
 
 // Calculates hand rank based on known cards
 function calculateHandRank(cards) {
+  // Sort the cards
 
+  // Check for highest ranking hand first and so forth
 }
 
 function classifyContext(trainingSet, contextToBeClassified) {
