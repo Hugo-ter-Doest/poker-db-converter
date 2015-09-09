@@ -1,5 +1,5 @@
 /*
-  Classifier based on poker odds
+  Card class
   Copyright (C) 2015 Hugo W.L. ter Doest
 
   This program is free software: you can redistribute it and/or modify
@@ -16,17 +16,24 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-var Card = require('./Card');
-var Hand = require('./Hand');
+var suites = ['Clubs', 'Spades', 'Diamonds', 'Hearts'];
 
-// Calculates future possible hand ranks based on community cards
-function calculateFutureHandRanks(cards) {
+var ACE = 12;
+var TWO = 0;
+var TEN = 8;
+var ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen',
+  'King', 'Ace'];
 
+function Card(suite, rank, isHoleCard) {
+  this.suite = suites.indexOf(suite);
+  this.rank = ranks.indexOf(rank);
+  this.isHoleCard = isHoleCard;
 }
 
-
-function classifyContext(trainingSet, contextToBeClassified) {
-
-}
-
-module.exports = classifyContext;
+module.exports = {
+  ACE,
+  TWO,
+  TEN,
+  ranks,
+  Card
+};
