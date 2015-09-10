@@ -59,38 +59,38 @@ Hand.prototype.isFlush = function() {
   // Check if the hand has 5 cards of one suite
   return(
     Object.keys(this.suites).some(function(suite) {
-      return(that.suites[suite] === 5);
+      if (that.suites[suite] === 5) {
+        that.flushSuite = suite;
+        return (true);
+      }
+      else {
+        return(false);
+      }
     })
   );
 };
 
 // Look for a Straight from the highest ranked card down
 Hand.prototype.isStraight = function() {
-  for (var end = this.cards.length; end > this.cards.length - 2; end--) {
-    if (end > 4) {
-      // Is this a Straight ?
-      var isStraight = true;
-      for (var i = end - this.cards.length; i <=end; i++) {
-        isStraight = isStraight && ((this.cards.[i - 1].rank + 1) === this.cards[i].rank);
-      }
-      // No Straight but we have an Ace --> Is this a Straight with Ace as 1?
-      if (this.containsAce(this.cards)) && (!isStraight)) {
-        var isStraight = (this.cards[0].rank === Card.TWO);
-        for (var i = 1; i < this.cards.length - 1; i++) {
-          isStraight = isStraight && ((this.cards[i - 1].rank + 1) === this.cards[i].rank);
-        }
-      }
-      return(isStraight);
+  for (var rank = ACE; rank >= 0; rank--) {
+    var isStraight = true;
+    for (var i = 0; i < 4; i++) {
+      isStraight = isStraight && this.ranksInHand[rank - i];
     }
-    else {
-      return(false);
+    if (isStraight) {
+      this.startOfStraight = rank - 4;
+      this.endOfStraight = rank;
+      return (true);
     }
   }
 };
 
 // Precondition: hand is a Straight flush
 Hand.prototype.isRoyalFlush = function() {
-
+  var that = this;
+  return(this.cards.some(function(c) {
+    return((c.rank === ACE) && (c.suite === that.flushSuite));
+  }));
 };
 
 // Admin for double, triple, quadruple ranks
@@ -129,6 +129,8 @@ Hand.prototype.calculateHandRank = function() {
   this.cards.sort(function(a, b) {
     return a.rank - b.rank;
   });
+  this.ranksInHand();
+  this.xOfAKind();
 
   var isFlush = this.isFlush();
   var isStraight = this.isStraight();
@@ -147,8 +149,6 @@ Hand.prototype.calculateHandRank = function() {
     return(STRAIGHT);
   }
 
-  this.ranksInHand();
-  this.xOfAKind();
 
   if (this.hasFourOfAKind) {
     return(FOUROFAKIND);
