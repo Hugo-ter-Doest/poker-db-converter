@@ -20,6 +20,9 @@ var suites = ['Clubs', 'Spades', 'Diamonds', 'Hearts'];
 
 var ACE = 12;
 var TWO = 0;
+var THREE = 1;
+var FOUR = 2;
+var FIVE = 3;
 var TEN = 8;
 var ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen',
   'King', 'Ace'];
@@ -30,10 +33,18 @@ function Card(suite, rank, isHoleCard) {
   this.isHoleCard = isHoleCard;
 }
 
+Card.prototype.prettyPrint = function() {
+  return(suites[this.suite] + ' ' + ranks[this.rank]);
+};
+
 module.exports = {
-  ACE,
-  TWO,
-  TEN,
-  ranks,
-  Card
+  ACE: ACE,
+  TWO: TWO,
+  THREE: THREE,
+  FOUR: FOUR,
+  FIVE: FIVE,
+  TEN: TEN,
+  ranks: ranks,
+  suites: suites,
+  Card: Card
 };

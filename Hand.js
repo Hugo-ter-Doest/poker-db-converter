@@ -37,13 +37,74 @@ function Hand(cards) {
   this.numberOfPairs = 0;
   this.hasThreeOfAKind = false;
   this.hasFourOfAKind = false;
+  this.suites = {};
 }
 
-Hand.prototype.containsAce = function() {
-  return(this.cards.some(function(c) {
-    return(c.rank === ACE);
-  }));
+// Based on: https://en.wikipedia.org/wiki/Poker_probability
+// 7 card probabilities
+// Total number of combinations is 133,784,560
+// hand 	        number 	    Probability
+// Royal flush    4,324 	    .000032
+// Straight flush 37,260 	    .000279
+// 4-of-a-kind 	  224,848 	  .0017
+// Full house 	  3,473,184 	.026
+// Flush 	        4,047,644 	.030
+// Straight 	    6,180,020 	.046
+// 3-of-a-kind 	  6,461,620 	.048
+// Two pairs 	    31,433,400 	.235
+// Pair 	        58,627,800 	.438
+// High card 	    23,294,460 	.174
+Hand.prototype.sevenCardHandProb = function() {
+  var totalNumberOfCombinations = 133784560;
+  var numberOfCombinations = 0;
+  switch (this.rank) {
+    case HIGHCARD:
+      numberOfCombinations = 23294460;
+      break;
+    case PAIR:
+      numberOfCombinations = 58627800;
+      break;
+    case TWOPAIR:
+      numberOfCombinations = 31433400;
+      break;
+    case THREEOFAKIND:
+      numberOfCombinations = 6461620;
+      break;
+    case STRAIGHT:
+      numberOfCombinations = 6180020;
+      break;
+    case FLUSH:
+      numberOfCombinations = 4047644;
+      break;
+    case FULLHOUSE:
+      numberOfCombinations = 3473184;
+      break;
+    case FOUROFAKIND:
+      numberOfCombinations = 224848;
+      break;
+    case STRAIGHTFLUSH:
+      numberOfCombinations = 37260;
+      break;
+    case ROYALFLUSH:
+      numberOfCombinations = 4324;
+      break;
+  }
+  this.rankProbability = numberOfCombinations / totalNumberOfCombinations;
 };
+
+Hand.prototype.sixCardHandProb = function() {
+
+};
+
+Hand.prototype.fiveCardHandProb = function() {
+
+};
+
+Hand.prototype.twoCardHandProb = function() {
+
+};
+
+
 
 Hand.prototype.isFlush = function() {
   // Count number of cards per Suite
@@ -72,24 +133,28 @@ Hand.prototype.isFlush = function() {
 
 // Look for a Straight from the highest ranked card down
 Hand.prototype.isStraight = function() {
-  for (var rank = ACE; rank >= 0; rank--) {
+  for (var rank = Card.ACE; rank >= 0; rank--) {
     var isStraight = true;
     for (var i = 0; i < 4; i++) {
       isStraight = isStraight && this.ranksInHand[rank - i];
     }
     if (isStraight) {
-      this.startOfStraight = rank - 4;
-      this.endOfStraight = rank;
       return (true);
     }
   }
+  // Check for a Straight starting with Ace as 1
+  return(this.ranksInHand[Card.ACE] &&
+    this.ranksInHand[Card.TWO] &&
+    this.ranksInHand[Card.THREE] &&
+    this.ranksInHand[Card.FOUR] &&
+    this.ranksInHand[Card.FIVE]);
 };
 
 // Precondition: hand is a Straight flush
 Hand.prototype.isRoyalFlush = function() {
   var that = this;
   return(this.cards.some(function(c) {
-    return((c.rank === ACE) && (c.suite === that.flushSuite));
+    return((c.rank === Card.ACE) && (c.suite == that.flushSuite));
   }));
 };
 
@@ -117,6 +182,7 @@ Hand.prototype.xOfAKind = function() {
     }
     if (that.ranksInHand[rank] === 2) {
       that.numberOfPairs++;
+    }
     if (that.ranksInHand[rank] === 3) {
       that.hasThreeOfAKind = true;
     }
@@ -134,48 +200,74 @@ Hand.prototype.calculateHandRank = function() {
 
   var isFlush = this.isFlush();
   var isStraight = this.isStraight();
+
   if (isFlush && isStraight) {
     if (this.isRoyalFlush()) {
-      return(ROYALFLUSH);
+      this.rank = ROYALFLUSH;
     }
     else {
-      return (STRAIGHTFLUSH);
+      this.rank = STRAIGHTFLUSH;
     }
   }
-  if (isFlush) {
-    return(FLUSH);
+  else {
+    if (isFlush) {
+      this.rank = FLUSH;
+    }
+    else {
+      if (isStraight) {
+        this.rank = STRAIGHT;
+      }
+      else {
+        if (this.hasFourOfAKind) {
+          this.rank = FOUROFAKIND;
+        }
+        else {
+          // Is this a Full house?
+          if (this.hasThreeOfAKind && this.numberOfPairs) {
+            this.rank = FULLHOUSE;
+          }
+          else {
+            // Is this a Three of a kind?
+            if (this.hasThreeOfAKind) {
+              this.rank = THREEOFAKIND;
+            }
+            else {
+              // Is this a Two pair?
+              if (this.numberOfPairs > 1) {
+                this.rank = TWOPAIR;
+              }
+              else {
+                // Is this a Pair?
+                if (this.numberOfPairs) {
+                  this.rank = PAIR;
+                }
+                else {
+                  // This is a High card
+                  this.rank = HIGHCARD;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
   }
-  if (isStraight) {
-    return(STRAIGHT);
+  switch (this.cards.length) {
+    case 2:
+      this.twoCardHandProb();
+      break;
+    case 5:
+      this.fiveCardHandProb();
+      break;
+    case 6:
+      this.sixCardHandProb();
+      break;
+    case 7:
+      this.sevenCardHandProb();
+      break;
   }
-
-
-  if (this.hasFourOfAKind) {
-    return(FOUROFAKIND);
-  }
-
-  // Is this a Full house?
-  if (this.hasThreeOfAKind && this.numberOfPairs) {
-    return(FULLHOUSE);
-  }
-
-  // Is this a Three of a kind?
-  if (this.hasThreeOfAKind) {
-    return(THREEOFAKIND);
-  }
-
-  // Is this a Two pair?
-  if (this.numberOfPairs > 1) {
-    return(TWOPAIR);
-  }
-
-  // Is this a Pair?
-  if (this.numberOfPairs) {
-    return(PAIR);
-  }
-
-  // This is a High card
-  return(HIGHCARD);
+  console.log('Rank probability: ' + this.rankProbability);
+  return(this.rank);
 };
 
 module.exports = {
