@@ -96,8 +96,57 @@ Hand.prototype.sixCardHandProb = function() {
 
 };
 
-Hand.prototype.fiveCardHandProb = function() {
 
+// Based on: https://en.wikipedia.org/wiki/Poker_probability
+// 5 card probabilities
+// Total number of combinations is 2,598,960
+// hand 	        number 	    Probability
+// Royal flush    4 	        0.00000154
+// Straight flush 36 	        0.0000139
+// 4-of-a-kind 	  624 	      0.000240
+// Full house 	  3,744 	    0.001441
+// Flush 	        5,108 	    0.001965
+// Straight 	    10,200 	    0.003925
+// 3-of-a-kind 	  54,912 	    0.021128
+// Two pairs 	    123,552 	  0.047539
+// Pair 	        1,098,240 	0.42.2569
+// High card 	    1,302,540 	0.50.1177
+Hand.prototype.fiveCardHandProb = function() {
+  var totalNumberOfCombinations = 2598960;
+  var numberOfCombinations = 0;
+  switch (this.rank) {
+    case HIGHCARD:
+      numberOfCombinations = 1302540;
+      break;
+    case PAIR:
+      numberOfCombinations = 1098240;
+      break;
+    case TWOPAIR:
+      numberOfCombinations = 123552;
+      break;
+    case THREEOFAKIND:
+      numberOfCombinations = 54912;
+      break;
+    case STRAIGHT:
+      numberOfCombinations = 10200;
+      break;
+    case FLUSH:
+      numberOfCombinations = 5108;
+      break;
+    case FULLHOUSE:
+      numberOfCombinations = 3744;
+      break;
+    case FOUROFAKIND:
+      numberOfCombinations = 624;
+      break;
+    case STRAIGHTFLUSH:
+      numberOfCombinations = 36;
+      break;
+    case ROYALFLUSH:
+      numberOfCombinations = 4;
+      break;
+  }
+  this.rankProbability = numberOfCombinations / totalNumberOfCombinations;
 };
 
 Hand.prototype.twoCardHandProb = function() {
