@@ -21,6 +21,30 @@ var Hand = require('../Hand');
 
 
 describe('Hand', function() {
+  it('should analyse poker hands correctly - Pocket cards - Pair', function() {
+    var card1 = new Card('Clubs', '2', true);
+    var card2 = new Card('Spades', '2', true);
+    var hand = new Hand.Hand([card1, card2]);
+    var handRank = hand.calculateHandRank();
+    expect(handRank).toEqual(Hand.PAIR);
+  });
+
+  it('should analyse poker hands correctly - Pocket cards - High card', function() {
+    var card1 = new Card('Clubs', '2', true);
+    var card2 = new Card('Spades', '6', true);
+    var hand = new Hand.Hand([card1, card2]);
+    var handRank = hand.calculateHandRank();
+    expect(handRank).toEqual(Hand.HIGHCARD);
+  });
+
+  it('should analyse poker hands correctly - Pocket cards - Suited cards', function() {
+    var card1 = new Card('Clubs', '2', true);
+    var card2 = new Card('Clubs', '6', true);
+    var hand = new Hand.Hand([card1, card2]);
+    var handRank = hand.calculateHandRank();
+    expect(handRank).toEqual(Hand.SUITEDCARDS);
+  });
+
   it('should analyse poker hands correctly - High card', function() {
     var card1 = new Card('Clubs', '2', false);
     var card2 = new Card('Spades', 'Jack', false);

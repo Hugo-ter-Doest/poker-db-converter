@@ -32,6 +32,14 @@ var ROYALFLUSH = 9;
 var handRankNames = ['High card', 'Pair', 'Two pair', 'Three of a kind', 'Straight',
   'Flush', 'Full house', 'Four of a kind', 'Straight flush', 'Royal flush'];
 
+// var HIGHCARD= 0;
+// var PAIR = 1;
+var SUITEDCARDS = 2;
+var CONNECTEDCARDS = 3;
+var CONNECTEDANDSUITED = 4;
+var pocketRankNames = ['High card', 'Pair', 'Suited cards', 'Connected cards',
+  'Connected and suited'];
+
 function Hand(cards) {
   this.cards = cards;
   this.numberOfPairs = 0;
@@ -99,7 +107,7 @@ Hand.prototype.sixCardHandProb = function() {
 
 // Based on: https://en.wikipedia.org/wiki/Poker_probability
 // 5 card probabilities
-// Total number of combinations is 2,598,960
+// Total number of combinations is C(52, 5) = 2,598,960
 // hand 	        number 	    Probability
 // Royal flush    4 	        0.00000154
 // Straight flush 36 	        0.0000139
@@ -109,8 +117,8 @@ Hand.prototype.sixCardHandProb = function() {
 // Straight 	    10,200 	    0.003925
 // 3-of-a-kind 	  54,912 	    0.021128
 // Two pairs 	    123,552 	  0.047539
-// Pair 	        1,098,240 	0.42.2569
-// High card 	    1,302,540 	0.50.1177
+// Pair 	        1,098,240 	0.422569
+// High card 	    1,302,540 	0.501177
 Hand.prototype.fiveCardHandProb = function() {
   var totalNumberOfCombinations = 2598960;
   var numberOfCombinations = 0;
@@ -149,11 +157,55 @@ Hand.prototype.fiveCardHandProb = function() {
   this.rankProbability = numberOfCombinations / totalNumberOfCombinations;
 };
 
+// Based on: https://en.wikipedia.org/wiki/Poker_probability
+// 5 card probabilities
+// Total number of combinations is C(52, 2) = 1,326
+//Pair                                        78/1326 = 0.0588
+//Suited cards                                312/1326 = 0.2353
+//Unsuited cards non paired                   936/1325 = 0.7059
+//Suited connectors                           (13 x 4) / 1326 = 0.0392
+//Connected cards                             (13 x 4 x 4) / 1326 = 0.156
+
+//AKs (or any specific suited cards) 	        0.00302 	331 : 1
+//AA (or any specific pair) 	                0.00452 	221 : 1
+//AKs, KQs, QJs, or JTs (suited cards) 	      0.0121 	81.9 : 1
+//AK (or any specific non-pair incl. suited) 	0.0121 	81.9 : 1
+//AA, KK, or QQ 	                            0.0136 	72.7 : 1
+//AA, KK, QQ or JJ 	                          0.0181 	54.3 : 1
+//Suited cards, jack or better 	              0.0181 	54.3 : 1
+//AA, KK, QQ, JJ, or TT 	                    0.0226 	43.2 : 1
+//Suited cards, 10 or better 	                0.0302 	32.2 : 1
+//Suited connectors 	                        0.0392 	24.5 : 1
+//Connected cards, 10 or better 	            0.0483 	19.7 : 1
+//Any 2 cards with rank at least queen 	      0.0498 	19.1 : 1
+//Any 2 cards with rank at least jack 	      0.0905 	10.1 : 1
+//Any 2 cards with rank at least 10 	        0.143 	5.98 : 1
+//Connected cards (cards of consecutive rank) 0.157 	5.38 : 1
+//Any 2 cards with rank at least 9 	          0.208 	3.81 : 1
+//Not connected nor suited, at least one 2-9 	0.534 	0.873 : 1
 Hand.prototype.twoCardHandProb = function() {
-
+  var totalNumberOfCombinations = 1326;
+  var numberOfCombinations = 0;
+  switch (this.rank) {
+    case HIGHCARD:
+      // Unsuited cards non paired
+      numberOfCombinations = 936;
+      break;
+    case SUITEDCARDS:
+      numberOfCombinations = 312;
+      break;
+    case CONNECTEDCARDS:
+      numberOfCombinations = 208;
+      break;
+    case CONNECTEDANDSUITED:
+      numberOfCombinations = 52;
+      break;
+    case PAIR:
+      numberOfCombinations = 78;
+      break;
+  }
+  this.rankProbability = numberOfCombinations / totalNumberOfCombinations;
 };
-
-
 
 Hand.prototype.isFlush = function() {
   // Count number of cards per Suite
@@ -238,6 +290,19 @@ Hand.prototype.xOfAKind = function() {
   });
 };
 
+Hand.prototype.twoCardSuited = function() {
+  return(this.cards[0].suite === this.cards[1].suite);
+};
+
+Hand.prototype.twoCardConnected = function() {
+  return(
+    // Normal case
+    (this.cards[0].rank + 1 === this.cards[1].rank) ||
+    // Second card is an Ace and the second card is a 2
+    ((this.cards[1].rank === Card.ACE) && (this.cards[1].rank === Card.TWO))
+  );
+};
+
 // Calculates hand rank based on known cards
 Hand.prototype.calculateHandRank = function() {
   // Sort the cards by rank in ascending order
@@ -301,6 +366,27 @@ Hand.prototype.calculateHandRank = function() {
       }
     }
   }
+  if ((this.cards.length === 2) && (this.rank !== PAIR)) {
+    // Narrow down pocket cards
+    var twoCardSuited = this.twoCardSuited();
+    var twoCardConnected = this.twoCardConnected();
+    if (twoCardSuited && twoCardConnected) {
+      this.rank = CONNECTEDANDSUITED;
+    }
+    else {
+      if (twoCardSuited) {
+        this.rank = SUITEDCARDS;
+      }
+      else {
+        if (twoCardConnected) {
+          this.rank = CONNECTEDCARDS;
+        }
+        else {
+          // this.rank = HIGHCARD;
+        }
+      }
+    }
+  }
   switch (this.cards.length) {
     case 2:
       this.twoCardHandProb();
@@ -315,7 +401,10 @@ Hand.prototype.calculateHandRank = function() {
       this.sevenCardHandProb();
       break;
   }
-  console.log('Rank probability: ' + this.rankProbability);
+  console.log('Number of cards: ' + this.cards.length);
+  console.log('Rank: ' + handRankNames[this.rank]);
+  var p = 100 * this.rankProbability;
+  console.log('Rank probability: ' + p.toFixed(4) + '%');
   return(this.rank);
 };
 
@@ -331,5 +420,9 @@ module.exports = {
   STRAIGHTFLUSH: STRAIGHTFLUSH,
   ROYALFLUSH: ROYALFLUSH,
   handRankNames: handRankNames,
+  SUITEDCARDS: SUITEDCARDS,
+  CONNECTEDCARDS: CONNECTEDCARDS,
+  CONNECTEDANDSUITED: CONNECTEDANDSUITED,
+  pocketRankNames: pocketRankNames,
   Hand: Hand
 };
