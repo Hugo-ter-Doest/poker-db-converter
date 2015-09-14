@@ -45,6 +45,32 @@ describe('Hand', function() {
     expect(handRank).toEqual(Hand.SUITEDCARDS);
   });
 
+  it('should analyse poker hands correctly - Pocket cards - Connected cards', function() {
+    var card1 = new Card('Clubs', '2', true);
+    var card2 = new Card('Spades', '3', true);
+    var hand = new Hand.Hand([card1, card2]);
+    var handRank = hand.calculateHandRank();
+    expect(handRank).toEqual(Hand.CONNECTEDCARDS);
+  });
+
+  it('should analyse poker hands correctly - Pocket cards - Connected cards' +
+    ' - with Ace and Two', function() {
+    var card1 = new Card('Clubs', 'Ace', true);
+    var card2 = new Card('Spades', '2', true);
+    var hand = new Hand.Hand([card1, card2]);
+    var handRank = hand.calculateHandRank();
+    expect(handRank).toEqual(Hand.CONNECTEDCARDS);
+  });
+
+  it('should analyse poker hands correctly - Pocket cards - Suited' +
+    ' connected cards', function() {
+    var card1 = new Card('Clubs', '2', true);
+    var card2 = new Card('Clubs', '3', true);
+    var hand = new Hand.Hand([card1, card2]);
+    var handRank = hand.calculateHandRank();
+    expect(handRank).toEqual(Hand.CONNECTEDANDSUITED);
+  });
+
   it('should analyse poker hands correctly - High card', function() {
     var card1 = new Card('Clubs', '2', false);
     var card2 = new Card('Spades', 'Jack', false);

@@ -298,8 +298,8 @@ Hand.prototype.twoCardConnected = function() {
   return(
     // Normal case
     (this.cards[0].rank + 1 === this.cards[1].rank) ||
-    // Second card is an Ace and the second card is a 2
-    ((this.cards[1].rank === Card.ACE) && (this.cards[1].rank === Card.TWO))
+    // Second card is an Ace and the first card is a 2
+    ((this.cards[1].rank === Card.ACE) && (this.cards[0].rank === Card.TWO))
   );
 };
 
