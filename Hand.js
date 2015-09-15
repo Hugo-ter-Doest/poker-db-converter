@@ -104,7 +104,6 @@ Hand.prototype.sixCardHandProb = function() {
 
 };
 
-
 // Based on: https://en.wikipedia.org/wiki/Poker_probability
 // 5 card probabilities
 // Total number of combinations is C(52, 5) = 2,598,960
@@ -205,6 +204,76 @@ Hand.prototype.twoCardHandProb = function() {
       break;
   }
   this.rankProbability = numberOfCombinations / totalNumberOfCombinations;
+};
+
+// Binomial coefficient
+function C(n, k) {
+  if ((typeof n !== 'number') || (typeof k !== 'number')) {
+    return false;
+  }
+  var coeff = 1;
+  for (var x = n - k + 1; x <= n; x++) {
+    coeff *= x;
+  }
+  for (x = 1; x <= k; x++) {
+    coeff /= x;
+  }
+  return coeff;
+}
+
+// Function for conditional probabilities given a hand with two cards
+// Maps hand rank to new (better) hand ranks
+Hand.prototype.preflopProbabilities = function() {
+  var prob = [];
+  // Depending on the hand rank we calculate the probabilities of
+  // a new rank
+  switch(this.rank) {
+    case HIGHCARD:
+      // Pair
+      // Two pair
+      // Three of a kind --> C(3,2) / C(50, 3)
+      // Four of a kind -> 2 / C(50, 3)
+      prob[FOUROFAKIND] = 2 / C(50, 3);
+      // Straight; possible if two cards are a max. of  4 ranks from each other
+      if ((this.cards[0].rank + 4 <= this.cards[1].rank) &&
+        (this.cards[1].rank + 4 <= Card.ACE)) {
+        // We need three distinct ranked cards, suite is arbitrary
+        prob[STRAIGHT] = (4 + 4 + 4) / C(50,3);
+      }
+      else { // Check for Ace
+        if ((this.cards[1].rank === Card.ACE) && (this.cards[0].rank <= Card.FOUR)) {
+          // We need three distinct ranked cards, suite is arbitrary
+          prob[STRAIGHT] = (4 + 4 + 4) / C(50,3);
+        }
+        else {
+          prob[STRAIGHT] = 0;
+        }
+      }
+      // Flush; not possible because cards are not suited
+      prob[FLUSH] = 0;
+      // Straight flush; not possible because straight is impossible
+      prob[STRAIGHTFLUSH] = 0;
+      // Royal flush; not possible because straight is impossible
+      prob[ROYALFLUSH] = 0;
+      break;
+    case PAIR:
+      break;
+    case SUITEDCARDS:
+      break;
+    case CONNECTEDCARDS:
+      break;
+    case CONNECTEDANDSUITED:
+      break;
+  }
+  return(prob);
+};
+
+Hand.prototype.flopProbabilities = function() {
+
+};
+
+Hand.prototype.turnProbabilities = function() {
+
 };
 
 Hand.prototype.isFlush = function() {
