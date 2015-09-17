@@ -167,21 +167,21 @@ Hand.prototype.fiveCardHandProb = function() {
 
 //AKs (or any specific suited cards) 	        0.00302 	331 : 1
 //AA (or any specific pair) 	                0.00452 	221 : 1
-//AKs, KQs, QJs, or JTs (suited cards) 	      0.0121 	81.9 : 1
-//AK (or any specific non-pair incl. suited) 	0.0121 	81.9 : 1
-//AA, KK, or QQ 	                            0.0136 	72.7 : 1
-//AA, KK, QQ or JJ 	                          0.0181 	54.3 : 1
-//Suited cards, jack or better 	              0.0181 	54.3 : 1
-//AA, KK, QQ, JJ, or TT 	                    0.0226 	43.2 : 1
-//Suited cards, 10 or better 	                0.0302 	32.2 : 1
-//Suited connectors 	                        0.0392 	24.5 : 1
-//Connected cards, 10 or better 	            0.0483 	19.7 : 1
-//Any 2 cards with rank at least queen 	      0.0498 	19.1 : 1
-//Any 2 cards with rank at least jack 	      0.0905 	10.1 : 1
-//Any 2 cards with rank at least 10 	        0.143 	5.98 : 1
-//Connected cards (cards of consecutive rank) 0.157 	5.38 : 1
-//Any 2 cards with rank at least 9 	          0.208 	3.81 : 1
-//Not connected nor suited, at least one 2-9 	0.534 	0.873 : 1
+//AKs, KQs, QJs, or JTs (suited cards) 	      0.0121 	  81.9 : 1
+//AK (or any specific non-pair incl. suited) 	0.0121 	  81.9 : 1
+//AA, KK, or QQ 	                            0.0136 	  72.7 : 1
+//AA, KK, QQ or JJ 	                          0.0181 	  54.3 : 1
+//Suited cards, jack or better 	              0.0181 	  54.3 : 1
+//AA, KK, QQ, JJ, or TT 	                    0.0226 	  43.2 : 1
+//Suited cards, 10 or better 	                0.0302 	  32.2 : 1
+//Suited connectors 	                        0.0392 	  24.5 : 1
+//Connected cards, 10 or better 	            0.0483 	  19.7 : 1
+//Any 2 cards with rank at least queen 	      0.0498 	  19.1 : 1
+//Any 2 cards with rank at least jack 	      0.0905 	  10.1 : 1
+//Any 2 cards with rank at least 10 	        0.143 	  5.98 : 1
+//Connected cards (cards of consecutive rank) 0.157 	  5.38 : 1
+//Any 2 cards with rank at least 9 	          0.208 	  3.81 : 1
+//Not connected nor suited, at least one 2-9 	0.534 	  0.873 : 1
 Hand.prototype.twoCardHandProb = function() {
   var totalNumberOfCombinations = 1326;
   var numberOfCombinations = 0;
@@ -225,25 +225,29 @@ function C(n, k) {
 // Maps hand rank to new (better) hand ranks
 Hand.prototype.preflopProbabilities = function() {
   var prob = [];
+  var totalNumber = C(50, 3);
   // Depending on the hand rank we calculate the probabilities of
   // a new rank
   switch(this.rank) {
     case HIGHCARD:
-      // Pair
-      // Two pair
-      // Three of a kind --> C(3,2) / C(50, 3)
+      // Pair: we need a distinct card: 3 are available in deck
+      prob[PAIR] = (C(3, 1) + C(3, 1)) / totalNumber;
+      // Two pair: each pocket card should be matched
+      prob[TWOPAIR] =  (C(3,1) C(2,1)) / (totalNumber * totalNumber);
+      // Three of a kind: two out of three cards should match --> 2 * C(3,2) / C(50, 3)
+      prob[THREEOFAKIND] = 2 * C(3, 2) / C(50, 3);
       // Four of a kind -> 2 / C(50, 3)
-      prob[FOUROFAKIND] = 2 / C(50, 3);
+      prob[FOUROFAKIND] = 2 / totalNumber;
       // Straight; possible if two cards are a max. of  4 ranks from each other
       if ((this.cards[0].rank + 4 <= this.cards[1].rank) &&
         (this.cards[1].rank + 4 <= Card.ACE)) {
         // We need three distinct ranked cards, suite is arbitrary
-        prob[STRAIGHT] = (4 + 4 + 4) / C(50,3);
+        prob[STRAIGHT] = (4 * 4 * 4) / totalNumber;
       }
       else { // Check for Ace
         if ((this.cards[1].rank === Card.ACE) && (this.cards[0].rank <= Card.FOUR)) {
           // We need three distinct ranked cards, suite is arbitrary
-          prob[STRAIGHT] = (4 + 4 + 4) / C(50,3);
+          prob[STRAIGHT] = (4 * 4 * 4) / totalNumber;
         }
         else {
           prob[STRAIGHT] = 0;
@@ -257,6 +261,20 @@ Hand.prototype.preflopProbabilities = function() {
       prob[ROYALFLUSH] = 0;
       break;
     case PAIR:
+      // Two pair: number of unique pairs in the deck: 12 X C(4, 2) + 1
+      prob[TWOPAIR] =  (12 * C(4, 2) + 1) * C(3, 2) / totalNumber;
+      // Three of a kind
+      prob[THREEOFAKIND] = C(3, 1) / totalNumber;
+      // Four of a kind
+      prob[FOUROFAKIND] =  / totalNumber;
+      // Straight
+      prob[STRAIGHT] = 0;
+      // Flush
+      prob[FLUSH] = 0;
+      // Straight flush
+      prob[STRAIGHTFLUSH] = 0;
+      // Royal flush
+      prob[ROYALFLUSH] = 0;
       break;
     case SUITEDCARDS:
       break;
