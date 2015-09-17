@@ -208,9 +208,6 @@ Hand.prototype.twoCardHandProb = function() {
 
 // Binomial coefficient
 function C(n, k) {
-  if ((typeof n !== 'number') || (typeof k !== 'number')) {
-    return false;
-  }
   var coeff = 1;
   for (var x = n - k + 1; x <= n; x++) {
     coeff *= x;
@@ -224,49 +221,63 @@ function C(n, k) {
 // Function for conditional probabilities given a hand with two cards
 // Maps hand rank to new (better) hand ranks
 Hand.prototype.preflopProbabilities = function() {
-  var prob = [];
+  var prob = {};
   var totalNumber = C(50, 3);
+  console.log(totalNumber);
   // Depending on the hand rank we calculate the probabilities of
   // a new rank
   switch(this.rank) {
     case HIGHCARD:
-      // Pair: we need a distinct card: 3 are available in deck
-      prob[PAIR] = (C(3, 1) + C(3, 1)) / totalNumber;
-      // Two pair: each pocket card should be matched
-      prob[TWOPAIR] =  (C(3,1) C(2,1)) / (totalNumber * totalNumber);
-      // Three of a kind: two out of three cards should match --> 2 * C(3,2) / C(50, 3)
-      prob[THREEOFAKIND] = 2 * C(3, 2) / C(50, 3);
-      // Four of a kind -> 2 / C(50, 3)
-      prob[FOUROFAKIND] = 2 / totalNumber;
+      // Pair: 3 cards to form a pair, 2 other cards have 10 ranks left to
+      // choose from, suite is free
+      var pairForOneCard = 3 * 10  * 4 * 10 * 4;
+      prob[handRankNames[PAIR]] = 2 * pairForOneCard / totalNumber;
+      // Two pair: each pocket card should be matched: 3 cards to form first
+      // pair, 3 cards to form second pair, third card has 10 ranks left,
+      // suite is free
+      prob[handRankNames[TWOPAIR]] =  3 * 2 * 10 * 4 / totalNumber;
+      // Three of a kind: two cards should match the rank of a pocket card,
+      // three suites left; third card has 10 ranks left, suite is free
+      var threeOfAKindForOneCard = 3 * 2 * 10 * 4;
+      prob[handRankNames[THREEOFAKIND]] = 2 * threeOfAKindForOneCard / totalNumber;
+      // Four of a kind: all three cards match a pocket card
+      var fourOfAKindForOneCard = 3 * 2 * 1;
+      prob[handRankNames[FOUROFAKIND]] = 2 * fourOfAKindForOneCard / totalNumber;
       // Straight; possible if two cards are a max. of  4 ranks from each other
-      if ((this.cards[0].rank + 4 <= this.cards[1].rank) &&
-        (this.cards[1].rank + 4 <= Card.ACE)) {
+      var nrStraightCombinations = 0;
+      if (this.cards[0].rank + 4 <= this.cards[1].rank) {
         // We need three distinct ranked cards, suite is arbitrary
-        prob[STRAIGHT] = (4 * 4 * 4) / totalNumber;
+        nrStraightCombinations = 4 * 4 * 4;
+        prob[handRankNames[STRAIGHT]] = nrStraightCombinations / totalNumber;
       }
       else { // Check for Ace
         if ((this.cards[1].rank === Card.ACE) && (this.cards[0].rank <= Card.FOUR)) {
           // We need three distinct ranked cards, suite is arbitrary
-          prob[STRAIGHT] = (4 * 4 * 4) / totalNumber;
+          nrStraightCombinations = 4 * 4 * 4;
+          prob[handRankNames[STRAIGHT]] = nrStraightCombinations / totalNumber;
         }
         else {
-          prob[STRAIGHT] = 0;
+          prob[handRankNames[STRAIGHT]] = 0;
         }
       }
       // Flush; not possible because cards are not suited
-      prob[FLUSH] = 0;
+      prob[handRankNames[FLUSH]] = 0;
       // Straight flush; not possible because straight is impossible
-      prob[STRAIGHTFLUSH] = 0;
+      prob[handRankNames[STRAIGHTFLUSH]] = 0;
       // Royal flush; not possible because straight is impossible
-      prob[ROYALFLUSH] = 0;
+      prob[handRankNames[ROYALFLUSH]] = 0;
+      // High card: three cards that do not make a pair (10 ranks left,
+      // suites are free), and do not make a flush or straight
+      prob[handRankNames[HIGHCARD]] = (10 * 4 * 9 * 4 * 8 * 4 -
+        nrStraightCombinations) / totalNumber;
       break;
     case PAIR:
       // Two pair: number of unique pairs in the deck: 12 X C(4, 2) + 1
-      prob[TWOPAIR] =  (12 * C(4, 2) + 1) * C(3, 2) / totalNumber;
+      prob[TWOPAIR] =  0;
       // Three of a kind
-      prob[THREEOFAKIND] = C(3, 1) / totalNumber;
+      prob[THREEOFAKIND] = 0;
       // Four of a kind
-      prob[FOUROFAKIND] =  / totalNumber;
+      prob[FOUROFAKIND] =  0;
       // Straight
       prob[STRAIGHT] = 0;
       // Flush
