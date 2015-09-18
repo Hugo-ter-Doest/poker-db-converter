@@ -31,7 +31,7 @@ describe('Hand', function() {
 
   it('should analyse poker hands correctly - Pocket cards - High card', function() {
     var card1 = new Card('Clubs', '2', true);
-    var card2 = new Card('Spades', '6', true);
+    var card2 = new Card('Spades', '7', true);
     var hand = new Hand.Hand([card1, card2]);
     var handRank = hand.calculateHandRank();
     expect(handRank).toEqual(Hand.HIGHCARD);

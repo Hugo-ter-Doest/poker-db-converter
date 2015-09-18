@@ -223,56 +223,75 @@ function C(n, k) {
 Hand.prototype.preflopProbabilities = function() {
   var prob = {};
   var totalNumber = C(50, 3);
-  console.log(totalNumber);
+  console.log('totalNumber: ' + totalNumber);
   // Depending on the hand rank we calculate the probabilities of
   // a new rank
+  var totalFreq = 0;
+  var freq;
   switch(this.rank) {
     case HIGHCARD:
-      // Pair: 3 cards to form a pair, 2 other cards have 10 ranks left to
-      // choose from, suite is free
-      var pairForOneCard = 3 * 10  * 4 * 10 * 4;
-      prob[handRankNames[PAIR]] = 2 * pairForOneCard / totalNumber;
-      // Two pair: each pocket card should be matched: 3 cards to form first
-      // pair, 3 cards to form second pair, third card has 10 ranks left,
+      // Pair: 6 cards to form a pair, 2 other cards have 11 ranks left to
+      // choose from, suite is free -> 44 cards
+      freq = C(6, 1) * C(44, 2);
+      prob[handRankNames[PAIR]] = freq / totalNumber;
+      totalFreq = freq;
+
+      // Two pair: both pocket cards should be matched: 3 cards to form first
+      // pair, 3 cards to form second pair, third card has 11 ranks left,
       // suite is free
-      prob[handRankNames[TWOPAIR]] =  3 * 2 * 10 * 4 / totalNumber;
+      freq = C(3, 1) * C(3, 1) * C(44, 1);
+      prob[handRankNames[TWOPAIR]] =  freq / totalNumber;
+      totalFreq += freq;
+
       // Three of a kind: two cards should match the rank of a pocket card,
       // three suites left; third card has 10 ranks left, suite is free
-      var threeOfAKindForOneCard = 3 * 2 * 10 * 4;
-      prob[handRankNames[THREEOFAKIND]] = 2 * threeOfAKindForOneCard / totalNumber;
+      // Add the cases where the flop is a three of a kind
+      freq = 2 * C(3, 2) * C(44, 1) + C(4, 3) * C(11, 1);
+      prob[handRankNames[THREEOFAKIND]] = freq / totalNumber;
+      totalFreq += freq;
+
       // Four of a kind: all three cards match a pocket card
-      var fourOfAKindForOneCard = 3 * 2 * 1;
-      prob[handRankNames[FOUROFAKIND]] = 2 * fourOfAKindForOneCard / totalNumber;
+      freq = 2 * C(3, 3);
+      prob[handRankNames[FOUROFAKIND]] = freq / totalNumber;
+      totalFreq += freq;
+
       // Straight; possible if two cards are a max. of  4 ranks from each other
-      var nrStraightCombinations = 0;
-      if (this.cards[0].rank + 4 <= this.cards[1].rank) {
+      if (((this.cards[0].rank + 4) >= this.cards[1].rank) ||
+          ((this.cards[1].rank === Card.ACE) && (this.cards[0].rank <= Card.FIVE))) {
         // We need three distinct ranked cards, suite is arbitrary
-        nrStraightCombinations = 4 * 4 * 4;
-        prob[handRankNames[STRAIGHT]] = nrStraightCombinations / totalNumber;
+        freq = C(4, 1) * C(4, 1) * C(4, 1);
       }
-      else { // Check for Ace
-        if ((this.cards[1].rank === Card.ACE) && (this.cards[0].rank <= Card.FOUR)) {
-          // We need three distinct ranked cards, suite is arbitrary
-          nrStraightCombinations = 4 * 4 * 4;
-          prob[handRankNames[STRAIGHT]] = nrStraightCombinations / totalNumber;
-        }
-        else {
-          prob[handRankNames[STRAIGHT]] = 0;
-        }
+      else {
+        freq = 0;
       }
+      prob[handRankNames[STRAIGHT]] = freq / totalNumber;
+      totalFreq += freq;
+
+      // High card: three cards that do not make a pair (11 ranks left,
+      // suites are free -> 44), and do not make a flush or straight
+      freq = C(44, 3) - freq;
+      prob[handRankNames[HIGHCARD]] = freq / totalNumber;
+      totalFreq += freq;
+
       // Flush; not possible because cards are not suited
       prob[handRankNames[FLUSH]] = 0;
+
       // Straight flush; not possible because straight is impossible
       prob[handRankNames[STRAIGHTFLUSH]] = 0;
+
       // Royal flush; not possible because straight is impossible
       prob[handRankNames[ROYALFLUSH]] = 0;
-      // High card: three cards that do not make a pair (10 ranks left,
-      // suites are free), and do not make a flush or straight
-      prob[handRankNames[HIGHCARD]] = (10 * 4 * 9 * 4 * 8 * 4 -
-        nrStraightCombinations) / totalNumber;
+
+      console.log('Total frequency ' + totalFreq);
+      var sum = 0;
+      Object.keys(prob).forEach(function(key) {
+        sum += prob[key];
+      });
+      console.log('Sum of probabilities: ' + sum);
       break;
     case PAIR:
-      // Two pair: number of unique pairs in the deck: 12 X C(4, 2) + 1
+      prob[handRankNames[PAIR]] = 0;
+      // Two pair
       prob[TWOPAIR] =  0;
       // Three of a kind
       prob[THREEOFAKIND] = 0;
