@@ -230,35 +230,37 @@ Hand.prototype.preflopProbabilities = function() {
   var freq;
   switch(this.rank) {
     case HIGHCARD:
-      // Pair: 6 cards to form a pair, 2 other cards have 11 ranks left to
-      // choose from, suite is free -> 44 cards
-      freq = C(6, 1) * C(44, 2);
+      // Pair: there are two ranks and two suites to form a pair, 2 other cards
+      // have 11 ranks left to choose from, suite is free
+      freq = C(2, 1) * C(3, 1) * C(4, 1) * C(4, 1) * C(11, 2);
       prob[handRankNames[PAIR]] = freq / totalNumber;
       totalFreq = freq;
 
       // Two pair: both pocket cards should be matched: 3 cards to form first
       // pair, 3 cards to form second pair, third card has 11 ranks left,
       // suite is free
-      freq = C(3, 1) * C(3, 1) * C(44, 1);
+      // Add the cases of one matching card and a complete pair on the flop
+      freq = C(3, 1) * C(3, 1) * C(4, 1) * C(11, 1) + C(2, 1) * C(3, 1) * C(4, 2) * C(11, 1);
       prob[handRankNames[TWOPAIR]] =  freq / totalNumber;
       totalFreq += freq;
 
       // Three of a kind: two cards should match the rank of a pocket card,
-      // three suites left; third card has 10 ranks left, suite is free
-      // Add the cases where the flop is a three of a kind
-      freq = 2 * C(3, 2) * C(44, 1) + C(4, 3) * C(11, 1);
+      // three suites left; third card has 11 ranks left, suite is free
+      // Add the cases where the flop is itself a three of a kind
+      freq = C(2, 1) * C(3, 2) * C(4, 1) * C(11, 1) + C(4, 3) * C(11, 1);
       prob[handRankNames[THREEOFAKIND]] = freq / totalNumber;
       totalFreq += freq;
 
-      // Four of a kind: all three cards match a pocket card
-      freq = 2 * C(3, 3);
+      // Four of a kind: all three cards match a pocket card, there are two
+      // ranks to choose from
+      freq = C(2, 1) * C(3, 3);
       prob[handRankNames[FOUROFAKIND]] = freq / totalNumber;
       totalFreq += freq;
 
       // Straight; possible if two cards are a max. of  4 ranks from each other
       if (((this.cards[0].rank + 4) >= this.cards[1].rank) ||
           ((this.cards[1].rank === Card.ACE) && (this.cards[0].rank <= Card.FIVE))) {
-        // We need three distinct ranked cards, suite is arbitrary
+        // We need three distinctly ranked cards, all 4 suites are available
         freq = C(4, 1) * C(4, 1) * C(4, 1);
       }
       else {
@@ -269,12 +271,18 @@ Hand.prototype.preflopProbabilities = function() {
 
       // High card: three cards that do not make a pair (11 ranks left,
       // suites are free -> 44), and do not make a flush or straight
-      freq = C(44, 3) - freq;
+      freq = C(4, 1) * C(4,1)  * C(4, 1) * C(11, 3) - freq;
       prob[handRankNames[HIGHCARD]] = freq / totalNumber;
       totalFreq += freq;
 
       // Flush; not possible because cards are not suited
       prob[handRankNames[FLUSH]] = 0;
+
+      // Full house: One card is matched once to make a pair, one card is
+      // matched twice to make a triple
+      freq = 2 * C(3, 2) * C(3, 1);
+      prob[handRankNames[FULLHOUSE]] = freq / totalNumber;
+      totalFreq += freq;
 
       // Straight flush; not possible because straight is impossible
       prob[handRankNames[STRAIGHTFLUSH]] = 0;
@@ -282,7 +290,7 @@ Hand.prototype.preflopProbabilities = function() {
       // Royal flush; not possible because straight is impossible
       prob[handRankNames[ROYALFLUSH]] = 0;
 
-      console.log('Total frequency ' + totalFreq);
+      console.log('Total frequency: ' + totalFreq);
       var sum = 0;
       Object.keys(prob).forEach(function(key) {
         sum += prob[key];
