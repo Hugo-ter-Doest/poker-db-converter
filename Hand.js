@@ -157,7 +157,7 @@ Hand.prototype.fiveCardHandProb = function() {
 };
 
 // Based on: https://en.wikipedia.org/wiki/Poker_probability
-// 5 card probabilities
+// 2 card probabilities
 // Total number of combinations is C(52, 2) = 1,326
 //Pair                                        78/1326 = 0.0588
 //Suited cards                                312/1326 = 0.2353
@@ -221,98 +221,110 @@ function C(n, k) {
 // Function for conditional probabilities given a hand with two cards
 // Maps hand rank to new (better) hand ranks
 Hand.prototype.preflopProbabilities = function() {
-  var prob = {};
-  var totalNumber = C(50, 3);
-  console.log('totalNumber: ' + totalNumber);
+  var frequency = {};
+  var probability = {};
+  var totalCombinations = C(50, 3);
   // Depending on the hand rank we calculate the probabilities of
   // a new rank
-  var totalFreq = 0;
-  var freq;
   switch(this.rank) {
     case HIGHCARD:
-      // Pair: there are two ranks and two suites to form a pair, 2 other cards
-      // have 11 ranks left to choose from, suite is free
-      freq = C(2, 1) * C(3, 1) * C(4, 1) * C(4, 1) * C(11, 2);
-      prob[handRankNames[PAIR]] = freq / totalNumber;
-      totalFreq = freq;
+      // Pair: two cases:
+      // - Two ranks and three suites to form a pair, 2 other cards have 11
+      //   ranks left to choose from (but must be unique, suite is free
+      // - Board pairing
+      frequency[handRankNames[PAIR]] = 2 * 3 * 4 * 4 * C(11, 2) +
+        // Board pairing, third card is from 10 ranks, 4 suites
+        C(11, 1) * C(4, 2) * C(40, 1);
 
-      // Two pair: both pocket cards should be matched: 3 cards to form first
-      // pair, 3 cards to form second pair, third card has 11 ranks left,
-      // suite is free
-      // Add the cases of one matching card and a complete pair on the flop
-      freq = C(3, 1) * C(3, 1) * C(4, 1) * C(11, 1) + C(2, 1) * C(3, 1) * C(4, 2) * C(11, 1);
-      prob[handRankNames[TWOPAIR]] =  freq / totalNumber;
-      totalFreq += freq;
+      // Two pair: two cases
+      // - Both pocket cards should be matched: 3 cards to form first
+      //   pair, 3 cards to form second pair, third card has 11 ranks left,
+      //   suite is free
+      // - One matching card and a board pairing
+      frequency[handRankNames[TWOPAIR]] =  C(3, 1) * C(3, 1) *  C(44, 1) +
+        // Board pairing
+        C(3, 1) * C(2, 1) *  C(4, 2) * C(11, 1);
 
-      // Three of a kind: two cards should match the rank of a pocket card,
-      // three suites left; third card has 11 ranks left, suite is free
-      // Add the cases where the flop is itself a three of a kind
-      freq = C(2, 1) * C(3, 2) * C(4, 1) * C(11, 1) + C(4, 3) * C(11, 1);
-      prob[handRankNames[THREEOFAKIND]] = freq / totalNumber;
-      totalFreq += freq;
+      // Three of a kind: two cases:
+      // - Two cards should match the rank of a pocket card,
+      //   three suites left; third card has 11 ranks left, suite is free
+      // - Board three of a kind
+      frequency[handRankNames[THREEOFAKIND]] =
+        // Two board cards match pocket cards
+        C(3, 2) * C(2, 1) * C(44, 1) +
+        // Board three of a kind: rank is fixed, suite is 3 of 4 suites
+        C(4, 3) * C(11, 1);
 
       // Four of a kind: all three cards match a pocket card, there are two
-      // ranks to choose from
-      freq = C(2, 1) * C(3, 3);
-      prob[handRankNames[FOUROFAKIND]] = freq / totalNumber;
-      totalFreq += freq;
+      // ranks to choose from all three suites are used -> 2 cases
+      frequency[handRankNames[FOUROFAKIND]] = 2;
 
       // Straight; possible if two cards are a max. of  4 ranks from each other
+      frequency[handRankNames[STRAIGHT]] = 0;
       if (((this.cards[0].rank + 4) >= this.cards[1].rank) ||
           ((this.cards[1].rank === Card.ACE) && (this.cards[0].rank <= Card.FIVE))) {
-        // We need three distinctly ranked cards, all 4 suites are available
-        freq = C(4, 1) * C(4, 1) * C(4, 1);
+        // We need three distinctly ranked cards, all 4 suites can be used
+        frequency[handRankNames[STRAIGHT]] = 4 * 4 * 4;
       }
-      else {
-        freq = 0;
-      }
-      prob[handRankNames[STRAIGHT]] = freq / totalNumber;
-      totalFreq += freq;
 
-      // High card: three cards that do not make a pair (11 ranks left,
-      // suites are free -> 44), and do not make a flush or straight
-      freq = C(4, 1) * C(4,1)  * C(4, 1) * C(11, 3) - freq;
-      prob[handRankNames[HIGHCARD]] = freq / totalNumber;
-      totalFreq += freq;
+      // High card: three cards that do not make a pair (choose 3 ranks from 11,
+      // suites are free), and do not make a flush or straight
+      frequency[handRankNames[HIGHCARD]] = 4 * 4 * 4 * C(11, 3) -
+        frequency[handRankNames[STRAIGHT]];
 
       // Flush; not possible because cards are not suited
-      prob[handRankNames[FLUSH]] = 0;
+      frequency[handRankNames[FLUSH]] = 0;
 
       // Full house: One card is matched once to make a pair, one card is
       // matched twice to make a triple
-      freq = 2 * C(3, 2) * C(3, 1);
-      prob[handRankNames[FULLHOUSE]] = freq / totalNumber;
-      totalFreq += freq;
+      frequency[handRankNames[FULLHOUSE]] = C(3, 2) * C(2, 1) * C(3, 1) * C(1, 1);
 
       // Straight flush; not possible because straight is impossible
-      prob[handRankNames[STRAIGHTFLUSH]] = 0;
+      frequency[handRankNames[STRAIGHTFLUSH]] = 0;
 
       // Royal flush; not possible because straight is impossible
-      prob[handRankNames[ROYALFLUSH]] = 0;
-
-      console.log('Total frequency: ' + totalFreq);
-      var sum = 0;
-      Object.keys(prob).forEach(function(key) {
-        sum += prob[key];
-      });
-      console.log('Sum of probabilities: ' + sum);
+      frequency[handRankNames[ROYALFLUSH]] = 0;
       break;
     case PAIR:
-      prob[handRankNames[PAIR]] = 0;
-      // Two pair
-      prob[TWOPAIR] =  0;
-      // Three of a kind
-      prob[THREEOFAKIND] = 0;
-      // Four of a kind
-      prob[FOUROFAKIND] =  0;
+      // Pair
+      frequency[handRankNames[PAIR]] =
+        // All triples
+        C(48, 3) -
+        // Minus pairs
+        C(12, 1) * C(4, 2) * C(44, 1) -
+        // Minus three of a kind
+        C(12, 1) * C(4, 3);
+
+      // Two pair: implies a board pairing: 12 ranks available
+      frequency[handRankNames[TWOPAIR]] = C(12, 1) * C(4, 2) * C(44, 1);
+
+      // Three of a kind: 1 card matches the pocket cards,
+      // remaining cards from 48 left-over cards minus all possible pairs
+      frequency[handRankNames[THREEOFAKIND]] =
+        2 * (C(48, 2) - C(12, 1) * C(4, 2));
+
+      // Four of a kind: two cards match the pocket cards
+      frequency[handRankNames[FOUROFAKIND]] =  1 * C(48, 1);
+
       // Straight
-      prob[STRAIGHT] = 0;
+      frequency[handRankNames[STRAIGHT]] = 0;
+
       // Flush
-      prob[FLUSH] = 0;
+      frequency[handRankNames[FLUSH]] = 0;
+
+      // Full house: two cases:
+      frequency[handRankNames[FULLHOUSE]] =
+        // - A board three of a kind from one of the remaining ranks
+        C(12, 1) * C(4, 3) +
+        // - 1 cards makes a set from the pocket cards plus a pair
+        2 * C(12,1) * C(4, 2);
+
       // Straight flush
-      prob[STRAIGHTFLUSH] = 0;
+      frequency[handRankNames[STRAIGHTFLUSH]] = 0;
+
       // Royal flush
-      prob[ROYALFLUSH] = 0;
+      frequency[handRankNames[ROYALFLUSH]] = 0;
+
       break;
     case SUITEDCARDS:
       break;
@@ -321,7 +333,17 @@ Hand.prototype.preflopProbabilities = function() {
     case CONNECTEDANDSUITED:
       break;
   }
-  return(prob);
+  var sumProb = 0;
+  var sumFreq = 0;
+  Object.keys(frequency).forEach(function(key) {
+    probability[key] = frequency[key] / totalCombinations;
+    sumProb += probability[key];
+    sumFreq += frequency[key];
+  });
+  console.log('Total number of flop combinations: ' + totalCombinations);
+  console.log('Sum of probabilities:              ' + sumProb);
+  console.log('Total frequency:                   ' + sumFreq);
+  return({c: totalCombinations, f: frequency, p: probability});
 };
 
 Hand.prototype.flopProbabilities = function() {
