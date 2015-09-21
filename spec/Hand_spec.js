@@ -30,11 +30,20 @@ describe('Hand', function() {
   });
 
   it('should analyse poker hands correctly - Pocket cards - High card', function() {
-    var card1 = new Card('Clubs', '2', true);
-    var card2 = new Card('Spades', '6', true);
+    var card1 = new Card('Clubs', '6', true);
+    var card2 = new Card('Spades', '8', true);
     var hand = new Hand.Hand([card1, card2]);
     var handRank = hand.calculateHandRank();
     expect(handRank).toEqual(Hand.HIGHCARD);
+    console.log(hand.preflopProbabilities().p);
+  });
+
+  it('should analyse poker hands correctly - Pocket cards - Suited cards', function() {
+    var card1 = new Card('Clubs', '2', true);
+    var card2 = new Card('Clubs', '6', true);
+    var hand = new Hand.Hand([card1, card2]);
+    var handRank = hand.calculateHandRank();
+    expect(handRank).toEqual(Hand.SUITEDCARDS);
     console.log(hand.preflopProbabilities().p);
   });
 

@@ -261,10 +261,38 @@ Hand.prototype.preflopProbabilities = function() {
 
       // Straight; possible if two cards are a max. of  4 ranks from each other
       frequency[handRankNames[STRAIGHT]] = 0;
-      if (((this.cards[0].rank + 4) >= this.cards[1].rank) ||
-          ((this.cards[1].rank === Card.ACE) && (this.cards[0].rank <= Card.FIVE))) {
-        // We need three distinctly ranked cards, all 4 suites can be used
-        frequency[handRankNames[STRAIGHT]] = 4 * 4 * 4;
+      // We need three distinctly ranked cards, all 4 suites can be used,
+      // cases:
+      // - 3 in between
+      // - 2 in between, 1 before
+      // - 2 in between, 1 after
+      // - 1 in between, 2 before
+      // - 1 in between, 2 after
+      // - 1 in between, 1 before, 1 after
+      if (((this.cards[0].rank + 4) === this.cards[1].rank)  ||
+        ((this.cards[1].rank === Card.ACE) && (this.cards[0].rank === Card.FIVE))) {
+      frequency[handRankNames[STRAIGHT]] += 4 * 4 * 4;
+      }
+      if (((this.cards[0].rank + 3) === this.cards[1].rank) &&
+        (this.cards[0].rank >= Card.TWO)) {
+        frequency[handRankNames[STRAIGHT]] += 4 * 4 * 4;
+      }
+      if (((this.cards[0].rank + 3) === this.cards[1].rank) &&
+        (this.cards[0].rank < Card.ACE)) {
+        frequency[handRankNames[STRAIGHT]] += 4 * 4 * 4;
+      }
+      if (((this.cards[0].rank + 2) === this.cards[1].rank) &&
+        (this.cards[0].rank >= Card.THREE)) {
+        frequency[handRankNames[STRAIGHT]] += 4 * 4 * 4;
+      }
+      if (((this.cards[0].rank + 2) === this.cards[1].rank) &&
+        (this.cards[1].rank + 1 < Card.ACE)) {
+        frequency[handRankNames[STRAIGHT]] += 4 * 4 * 4;
+      }
+      if (((this.cards[0].rank + 2) === this.cards[1].rank) &&
+        (this.cards[1].rank < Card.ACE) &&
+        (this.cards[0].rank >= Card.TWO)) {
+        frequency[handRankNames[STRAIGHT]] += 4 * 4 * 4;
       }
 
       // High card: three cards that do not make a pair (choose 3 ranks from 11,
@@ -288,7 +316,7 @@ Hand.prototype.preflopProbabilities = function() {
     case PAIR:
       // Pair
       frequency[handRankNames[PAIR]] =
-        // All triples
+        // All three card combinations
         C(48, 3) -
         // Minus pairs
         C(12, 1) * C(4, 2) * C(44, 1) -
@@ -324,9 +352,66 @@ Hand.prototype.preflopProbabilities = function() {
 
       // Royal flush
       frequency[handRankNames[ROYALFLUSH]] = 0;
-
       break;
     case SUITEDCARDS:
+      // Pair: two cases:
+      // - Two ranks and three suites to form a pair, 2 other cards have 11
+      //   ranks left to choose from (but must be unique, suite is free
+      // - Board pairing
+      frequency[handRankNames[PAIR]] = 2 * 3 * 4 * 4 * C(11, 2) +
+        // Board pairing, third card is from 10 ranks, 4 suites
+        C(11, 1) * C(4, 2) * C(40, 1);
+
+      // Two pair: two cases
+      // - Both pocket cards should be matched: 3 cards to form first
+      //   pair, 3 cards to form second pair, third card has 11 ranks left,
+      //   suite is free
+      // - One matching card and a board pairing
+      frequency[handRankNames[TWOPAIR]] =  C(3, 1) * C(3, 1) *  C(44, 1) +
+        // Board pairing
+        C(3, 1) * C(2, 1) *  C(4, 2) * C(11, 1);
+
+      // Three of a kind: two cases:
+      // - Two cards should match the rank of a pocket card,
+      //   three suites left; third card has 11 ranks left, suite is free
+      // - Board three of a kind
+      frequency[handRankNames[THREEOFAKIND]] =
+        // Two board cards match pocket cards
+        C(3, 2) * C(2, 1) * C(44, 1) +
+          // Board three of a kind: rank is fixed, suite is 3 of 4 suites
+        C(4, 3) * C(11, 1);
+
+      // Four of a kind: all three cards match a pocket card, there are two
+      // ranks to choose from all three suites are used -> 2 cases
+      frequency[handRankNames[FOUROFAKIND]] = 2;
+
+      // Straight; possible if two cards are a max. of  4 ranks from each other
+      frequency[handRankNames[STRAIGHT]] = 0;
+      if (((this.cards[0].rank + 4) >= this.cards[1].rank) ||
+        ((this.cards[1].rank === Card.ACE) && (this.cards[0].rank <= Card.FIVE))) {
+        // We need three distinctly ranked cards, straight flush is substracted
+        frequency[handRankNames[STRAIGHT]] = 4 * 4 * 4 - 1;
+      }
+
+      // Flush: we need three more cards of the same suite, 11 cards available
+      // Substract straight flush
+      frequency[handRankNames[FLUSH]] = C(11, 3) - 1;
+
+      // Full house: One card is matched once to make a pair, one card is
+      // matched twice to make a triple
+      frequency[handRankNames[FULLHOUSE]] = C(3, 2) * C(2, 1) * C(3, 1) * C(1, 1);
+
+      // Straight flush: if a straight is possible, then a straight flush is one
+      // combination
+      if (frequency[handRankNames[STRAIGHT]]) {
+        frequency[handRankNames[STRAIGHTFLUSH]] = 1;
+      }
+      else {
+        frequency[handRankNames[STRAIGHTFLUSH]] = 0;
+      }
+
+      // Royal flush: if the pocket cards imply a royal flush
+      frequency[handRankNames[ROYALFLUSH]] = 0;
       break;
     case CONNECTEDCARDS:
       break;
