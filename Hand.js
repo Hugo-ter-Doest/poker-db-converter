@@ -705,6 +705,26 @@ Hand.prototype.calculateHandRank = function() {
   return(this.rank);
 };
 
+Hand.prototype.PrettyPrint = function() {
+  var str = '';
+  // Print Hand
+  str += 'HAND\n';
+  this.cards.forEach(function(c) {
+    str += Card.suites[c.suite] + ' ' + Card.ranks[c.rank] + '\n';
+  });
+  str += 'Rank: ' + this.rank + '\n';
+
+  // Print a priori probability of the hand
+  str += 'A PRIORI PROBABILITY\n';
+  str += this.rankProbability;
+
+  // Print conditional probabilities
+  str += 'CONDITIONAL PROBABILITIES PREFLOP\n';
+  // todo
+
+  return(str);
+};
+
 module.exports = {
   HIGHCARD: HIGHCARD,
   PAIR: PAIR,
