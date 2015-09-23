@@ -101,6 +101,42 @@ Hand.prototype.sevenCardHandProb = function() {
 };
 
 Hand.prototype.sixCardHandProb = function() {
+  var totalNumberOfCombinations = C(52, 6);
+  var numberOfCombinations = 0;
+  switch (this.rank) {
+    case HIGHCARD:
+      numberOfCombinations = 0;
+      break;
+    case PAIR:
+      // Possible pairs, 5 cards are freely chosen, minus three of a kind and four of a kind
+      numberOfCombinations = C(13, 1) * C(4, 2) * C(50, 3);
+      break;
+    case TWOPAIR:
+      numberOfCombinations = 0;
+      break;
+    case THREEOFAKIND:
+      numberOfCombinations = 0;
+      break;
+    case STRAIGHT:
+      numberOfCombinations = 0;
+      break;
+    case FLUSH:
+      numberOfCombinations = 0;
+      break;
+    case FULLHOUSE:
+      numberOfCombinations = 0;
+      break;
+    case FOUROFAKIND:
+      numberOfCombinations = 0;
+      break;
+    case STRAIGHTFLUSH:
+      numberOfCombinations = 0;
+      break;
+    case ROYALFLUSH:
+      numberOfCombinations = 0;
+      break;
+  }
+  this.rankProbability = numberOfCombinations / totalNumberOfCombinations;
 
 };
 
@@ -221,9 +257,9 @@ function C(n, k) {
 // Function for conditional probabilities given a hand with two cards
 // Maps hand rank to new (better) hand ranks
 Hand.prototype.preflopProbabilities = function() {
-  var frequency = {};
-  var probability = {};
-  var totalCombinations = C(50, 3);
+  this.frequency = [];
+  this.probability = [];
+  this.totalCombinations = C(50, 3);
   // Depending on the hand rank we calculate the probabilities of
   // a new rank
   switch(this.rank) {
@@ -232,7 +268,7 @@ Hand.prototype.preflopProbabilities = function() {
       // - Two ranks and three suites to form a pair, 2 other cards have 11
       //   ranks left to choose from (but must be unique, suite is free
       // - Board pairing
-      frequency[handRankNames[PAIR]] = 2 * 3 * 4 * 4 * C(11, 2) +
+      this.frequency[PAIR] = 2 * 3 * 4 * 4 * C(11, 2) +
         // Board pairing, third card is from 10 ranks, 4 suites
         C(11, 1) * C(4, 2) * C(40, 1);
 
@@ -241,7 +277,7 @@ Hand.prototype.preflopProbabilities = function() {
       //   pair, 3 cards to form second pair, third card has 11 ranks left,
       //   suite is free
       // - One matching card and a board pairing
-      frequency[handRankNames[TWOPAIR]] =  C(3, 1) * C(3, 1) *  C(44, 1) +
+      this.frequency[TWOPAIR] =  C(3, 1) * C(3, 1) *  C(44, 1) +
         // Board pairing
         C(3, 1) * C(2, 1) *  C(4, 2) * C(11, 1);
 
@@ -249,7 +285,7 @@ Hand.prototype.preflopProbabilities = function() {
       // - Two cards should match the rank of a pocket card,
       //   three suites left; third card has 11 ranks left, suite is free
       // - Board three of a kind
-      frequency[handRankNames[THREEOFAKIND]] =
+      this.frequency[THREEOFAKIND] =
         // Two board cards match pocket cards
         C(3, 2) * C(2, 1) * C(44, 1) +
         // Board three of a kind: rank is fixed, suite is 3 of 4 suites
@@ -257,65 +293,65 @@ Hand.prototype.preflopProbabilities = function() {
 
       // Four of a kind: all three cards match a pocket card, there are two
       // ranks to choose from all three suites are used -> 2 cases
-      frequency[handRankNames[FOUROFAKIND]] = 2;
+      this.frequency[FOUROFAKIND] = 2;
 
       // Straight; possible if two cards are a max. of  4 ranks from each other
-      frequency[handRankNames[STRAIGHT]] = 0;
+      this.frequency[STRAIGHT] = 0;
       // We need three distinctly ranked cards, all 4 suites can be used,
       // cases:
       // - 3 cards in between -> two cases: with or without Ace as first card
       if (((this.cards[0].rank + 4) === this.cards[1].rank)  ||
         ((this.cards[1].rank === Card.ACE) && (this.cards[0].rank === Card.FIVE))) {
-      frequency[handRankNames[STRAIGHT]] += 4 * 4 * 4;
+        this.frequency[STRAIGHT] += 4 * 4 * 4;
       }
       // - 2 in between, 1 before
       if (((this.cards[0].rank + 3) === this.cards[1].rank) &&
         (this.cards[0].rank >= Card.TWO)) {
-        frequency[handRankNames[STRAIGHT]] += 4 * 4 * 4;
+        this.frequency[STRAIGHT] += 4 * 4 * 4;
       }
       // - 2 in between, 1 after
       if (((this.cards[0].rank + 3) === this.cards[1].rank) &&
         (this.cards[0].rank < Card.ACE)) {
-        frequency[handRankNames[STRAIGHT]] += 4 * 4 * 4;
+        this.frequency[STRAIGHT] += 4 * 4 * 4;
       }
       // - 1 in between, 2 before
       if (((this.cards[0].rank + 2) === this.cards[1].rank) &&
         (this.cards[0].rank >= Card.THREE)) {
-        frequency[handRankNames[STRAIGHT]] += 4 * 4 * 4;
+        this.frequency[STRAIGHT] += 4 * 4 * 4;
       }
       // - 1 in between, 2 after
       if (((this.cards[0].rank + 2) === this.cards[1].rank) &&
         (this.cards[1].rank + 1 < Card.ACE)) {
-        frequency[handRankNames[STRAIGHT]] += 4 * 4 * 4;
+        this.frequency[STRAIGHT] += 4 * 4 * 4;
       }
       // - 1 in between, 1 before, 1 after
       if (((this.cards[0].rank + 2) === this.cards[1].rank) &&
         (this.cards[1].rank < Card.ACE) &&
         (this.cards[0].rank >= Card.TWO)) {
-        frequency[handRankNames[STRAIGHT]] += 4 * 4 * 4;
+        this.frequency[STRAIGHT] += 4 * 4 * 4;
       }
 
       // High card: three cards that do not make a pair (choose 3 ranks from 11,
       // suites are free), and do not make a flush or straight
-      frequency[handRankNames[HIGHCARD]] = 4 * 4 * 4 * C(11, 3) -
-        frequency[handRankNames[STRAIGHT]];
+      this.frequency[HIGHCARD] = 4 * 4 * 4 * C(11, 3) -
+        this.frequency[STRAIGHT];
 
       // Flush; not possible because cards are not suited
-      frequency[handRankNames[FLUSH]] = 0;
+      this.frequency[FLUSH] = 0;
 
       // Full house: One card is matched once to make a pair, one card is
       // matched twice to make a triple
-      frequency[handRankNames[FULLHOUSE]] = C(3, 2) * C(2, 1) * C(3, 1) * C(1, 1);
+      this.frequency[FULLHOUSE] = C(3, 2) * C(2, 1) * C(3, 1) * C(1, 1);
 
       // Straight flush; not possible because straight is impossible
-      frequency[handRankNames[STRAIGHTFLUSH]] = 0;
+      this.frequency[STRAIGHTFLUSH] = 0;
 
       // Royal flush; not possible because straight is impossible
-      frequency[handRankNames[ROYALFLUSH]] = 0;
+      this.frequency[ROYALFLUSH] = 0;
       break;
     case PAIR:
       // Pair
-      frequency[handRankNames[PAIR]] =
+      this.frequency[PAIR] =
         // All three card combinations
         C(48, 3) -
         // Minus pairs
@@ -324,42 +360,42 @@ Hand.prototype.preflopProbabilities = function() {
         C(12, 1) * C(4, 3);
 
       // Two pair: implies a board pairing: 12 ranks available
-      frequency[handRankNames[TWOPAIR]] = C(12, 1) * C(4, 2) * C(44, 1);
+      this.frequency[TWOPAIR] = C(12, 1) * C(4, 2) * C(44, 1);
 
       // Three of a kind: 1 card matches the pocket cards,
       // remaining cards from 48 left-over cards minus all possible pairs
-      frequency[handRankNames[THREEOFAKIND]] =
+      this.frequency[THREEOFAKIND] =
         2 * (C(48, 2) - C(12, 1) * C(4, 2));
 
       // Four of a kind: two cards match the pocket cards making four of a kind,
       // third card is chosen from 48 remaining cards.
-      frequency[handRankNames[FOUROFAKIND]] =  1 * C(48, 1);
+      this.frequency[FOUROFAKIND] =  1 * C(48, 1);
 
       // Straight
-      frequency[handRankNames[STRAIGHT]] = 0;
+      this.frequency[STRAIGHT] = 0;
 
       // Flush
-      frequency[handRankNames[FLUSH]] = 0;
+      this.frequency[FLUSH] = 0;
 
       // Full house: two cases:
-      frequency[handRankNames[FULLHOUSE]] =
+      this.frequency[FULLHOUSE] =
         // - A board three of a kind from one of the remaining ranks
         C(12, 1) * C(4, 3) +
         // - 1 cards makes a set from the pocket cards plus a pair
         2 * C(12,1) * C(4, 2);
 
       // Straight flush
-      frequency[handRankNames[STRAIGHTFLUSH]] = 0;
+      this.frequency[STRAIGHTFLUSH] = 0;
 
       // Royal flush
-      frequency[handRankNames[ROYALFLUSH]] = 0;
+      this.frequency[ROYALFLUSH] = 0;
       break;
     case SUITEDCARDS:
       // Pair: two cases:
       // - Two ranks and three suites to form a pair, 2 other cards have 11
       //   ranks left to choose from (but must be unique, suite is free
       // - Board pairing
-      frequency[handRankNames[PAIR]] = 2 * 3 * 4 * 4 * C(11, 2) +
+      this.frequency[PAIR] = 2 * 3 * 4 * 4 * C(11, 2) +
         // Board pairing, third card is from 10 ranks, 4 suites
         C(11, 1) * C(4, 2) * C(40, 1);
 
@@ -368,7 +404,7 @@ Hand.prototype.preflopProbabilities = function() {
       //   pair, 3 cards to form second pair, third card has 11 ranks left,
       //   suite is free
       // - One matching card and a board pairing
-      frequency[handRankNames[TWOPAIR]] =  C(3, 1) * C(3, 1) *  C(44, 1) +
+      this.frequency[TWOPAIR] =  C(3, 1) * C(3, 1) *  C(44, 1) +
         // Board pairing
         C(3, 1) * C(2, 1) *  C(4, 2) * C(11, 1);
 
@@ -376,7 +412,7 @@ Hand.prototype.preflopProbabilities = function() {
       // - Two cards should match the rank of a pocket card,
       //   three suites left; third card has 11 ranks left, suite is free
       // - Board three of a kind
-      frequency[handRankNames[THREEOFAKIND]] =
+      this.frequency[THREEOFAKIND] =
         // Two board cards match pocket cards
         C(3, 2) * C(2, 1) * C(44, 1) +
           // Board three of a kind: rank is fixed, suite is 3 of 4 suites
@@ -384,116 +420,116 @@ Hand.prototype.preflopProbabilities = function() {
 
       // Four of a kind: all three cards match a pocket card, there are two
       // ranks to choose from all three suites are used -> 2 cases
-      frequency[handRankNames[FOUROFAKIND]] = 2;
+      this.frequency[FOUROFAKIND] = 2;
 
       // Straight; possible if two cards are a max. of  4 ranks from each other.
-      frequency[handRankNames[STRAIGHT]] = 0;
+      this.frequency[STRAIGHT] = 0;
       // Straight flush (1) is substracted in each case
       // Cases:
       // - 3 cards in between -> two cases: with or without Ace as first card
       if (((this.cards[0].rank + 4) === this.cards[1].rank)  ||
         ((this.cards[1].rank === Card.ACE) && (this.cards[0].rank === Card.FIVE))) {
-        frequency[handRankNames[STRAIGHT]] += 4 * 4 * 4 - 1;
+        this.frequency[STRAIGHT] += 4 * 4 * 4 - 1;
       }
       // - 2 in between, 1 before
       if (((this.cards[0].rank + 3) === this.cards[1].rank) &&
         (this.cards[0].rank >= Card.TWO)) {
-        frequency[handRankNames[STRAIGHT]] += 4 * 4 * 4 - 1;
+        this.frequency[STRAIGHT] += 4 * 4 * 4 - 1;
       }
       // - 2 in between, 1 after
       if (((this.cards[0].rank + 3) === this.cards[1].rank) &&
         (this.cards[0].rank < Card.ACE)) {
-        frequency[handRankNames[STRAIGHT]] += 4 * 4 * 4 - 1;
+        this.frequency[STRAIGHT] += 4 * 4 * 4 - 1;
       }
       // - 1 in between, 2 before
       if (((this.cards[0].rank + 2) === this.cards[1].rank) &&
         (this.cards[0].rank >= Card.THREE)) {
-        frequency[handRankNames[STRAIGHT]] += 4 * 4 * 4 - 1;
+        this.frequency[STRAIGHT] += 4 * 4 * 4 - 1;
       }
       // - 1 in between, 2 after
       if (((this.cards[0].rank + 2) === this.cards[1].rank) &&
         (this.cards[1].rank + 1 < Card.ACE)) {
-        frequency[handRankNames[STRAIGHT]] += 4 * 4 * 4 - 1;
+        this.frequency[STRAIGHT] += 4 * 4 * 4 - 1;
       }
       // - 1 in between, 1 before, 1 after
       if (((this.cards[0].rank + 2) === this.cards[1].rank) &&
         (this.cards[1].rank < Card.ACE) &&
         (this.cards[0].rank >= Card.TWO)) {
-        frequency[handRankNames[STRAIGHT]] += 4 * 4 * 4 - 1;
+        this.frequency[STRAIGHT] += 4 * 4 * 4 - 1;
       }
 
       // Flush: we need three more cards of the same suite, 11 cards available
       // Substract straight flush
-      frequency[handRankNames[FLUSH]] = C(11, 3) - 1;
+      this.frequency[FLUSH] = C(11, 3) - 1;
 
       // Full house: One card is matched once to make a pair, one card is
       // matched twice to make a triple
-      frequency[handRankNames[FULLHOUSE]] = C(3, 2) * C(2, 1) * C(3, 1) * C(1, 1);
+      this.frequency[FULLHOUSE] = C(3, 2) * C(2, 1) * C(3, 1) * C(1, 1);
 
       // Straight flush: if a straight is possible, then a straight flush is one
       // combination
-      if (frequency[handRankNames[STRAIGHT]]) {
-        frequency[handRankNames[STRAIGHTFLUSH]] = 1;
+      if (this.frequency[STRAIGHT]) {
+        this.frequency[STRAIGHTFLUSH] = 1;
       }
       else {
-        frequency[handRankNames[STRAIGHTFLUSH]] = 0;
+        this.frequency[STRAIGHTFLUSH] = 0;
       }
 
       // Royal flush: if the pocket cards imply a royal flush
-      frequency[handRankNames[ROYALFLUSH]] = 0;
+      this.frequency[ROYALFLUSH] = 0;
       break;
     case CONNECTEDCARDS:
-      frequency[handRankNames[PAIR]] = 0;
+      this.frequency[PAIR] = 0;
 
-      frequency[handRankNames[TWOPAIR]] = 0;
+      this.frequency[TWOPAIR] = 0;
 
-      frequency[handRankNames[THREEOFAKIND]] = 0;
+      this.frequency[THREEOFAKIND] = 0;
 
-      frequency[handRankNames[FOUROFAKIND]] = 0;
+      this.frequency[FOUROFAKIND] = 0;
 
-      frequency[handRankNames[STRAIGHT]] = 0;
+      this.frequency[STRAIGHT] = 0;
 
-      frequency[handRankNames[FLUSH]] = 0;
+      this.frequency[FLUSH] = 0;
 
       // High card: three uniquely ranked cards that do not pair with pocket cards and do not form
       // a flush or straight
-      frequency[handRankNames[HIGHCARD]] = 0;
+      this.frequency[HIGHCARD] = 0;
 
-      frequency[handRankNames[STRAIGHTFLUSH]] = 0;
+      this.frequency[STRAIGHTFLUSH] = 0;
 
-      frequency[handRankNames[ROYALFLUSH]] = 0;
+      this.frequency[ROYALFLUSH] = 0;
       break;
     case CONNECTEDANDSUITED:
-      frequency[handRankNames[HIGHCARD]] = 0;
+      this.frequency[HIGHCARD] = 0;
 
-      frequency[handRankNames[PAIR]] = 0;
+      this.frequency[PAIR] = 0;
 
-      frequency[handRankNames[TWOPAIR]] = 0;
+      this.frequency[TWOPAIR] = 0;
 
-      frequency[handRankNames[THREEOFAKIND]] = 0;
+      this.frequency[THREEOFAKIND] = 0;
 
-      frequency[handRankNames[FOUROFAKIND]] = 0;
+      this.frequency[FOUROFAKIND] = 0;
 
-      frequency[handRankNames[STRAIGHT]] = 0;
+      this.frequency[STRAIGHT] = 0;
 
-      frequency[handRankNames[FLUSH]] = 0;
+      this.frequency[FLUSH] = 0;
 
-      frequency[handRankNames[STRAIGHTFLUSH]] = 0;
+      this.frequency[STRAIGHTFLUSH] = 0;
 
-      frequency[handRankNames[ROYALFLUSH]] = 0;
+      this.frequency[ROYALFLUSH] = 0;
       break;
   }
   var sumProb = 0;
   var sumFreq = 0;
-  Object.keys(frequency).forEach(function(key) {
-    probability[key] = frequency[key] / totalCombinations;
-    sumProb += probability[key];
-    sumFreq += frequency[key];
+  var that = this;
+  this.frequency.forEach(function(f, index) {
+    that.probability[index] = f / that.totalCombinations;
+    sumProb += that.probability[index];
+    sumFreq += that.frequency[index];
   });
-  console.log('Total number of flop combinations: ' + totalCombinations);
+  console.log('Total number of flop combinations: ' + this.totalCombinations);
   console.log('Sum of probabilities:              ' + sumProb);
   console.log('Total frequency:                   ' + sumFreq);
-  return({c: totalCombinations, f: frequency, p: probability});
 };
 
 Hand.prototype.flopProbabilities = function() {
@@ -705,22 +741,25 @@ Hand.prototype.calculateHandRank = function() {
   return(this.rank);
 };
 
-Hand.prototype.PrettyPrint = function() {
+Hand.prototype.prettyPrint = function() {
   var str = '';
   // Print Hand
   str += 'HAND\n';
   this.cards.forEach(function(c) {
     str += Card.suites[c.suite] + ' ' + Card.ranks[c.rank] + '\n';
   });
-  str += 'Rank: ' + this.rank + '\n';
+  str += 'Highest rank: ' + this.rank + '\n';
 
   // Print a priori probability of the hand
   str += 'A PRIORI PROBABILITY\n';
-  str += this.rankProbability;
+  str += this.rankProbability + '\n';
 
   // Print conditional probabilities
   str += 'CONDITIONAL PROBABILITIES PREFLOP\n';
-  // todo
+  var that = this;
+  this.frequency.forEach(function(f, index) {
+    str += handRankNames[index] + ':\t\t' + f + '\t' + that.probability[index] + '\n';
+  });
 
   return(str);
 };

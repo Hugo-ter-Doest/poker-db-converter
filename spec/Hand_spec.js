@@ -35,7 +35,8 @@ describe('Hand', function() {
     var hand = new Hand.Hand([card1, card2]);
     var handRank = hand.calculateHandRank();
     expect(handRank).toEqual(Hand.HIGHCARD);
-    console.log(hand.preflopProbabilities().p);
+    hand.preflopProbabilities();
+    console.log(hand.prettyPrint());
   });
 
   it('should analyse poker hands correctly - Pocket cards - Suited cards', function() {
@@ -44,7 +45,8 @@ describe('Hand', function() {
     var hand = new Hand.Hand([card1, card2]);
     var handRank = hand.calculateHandRank();
     expect(handRank).toEqual(Hand.SUITEDCARDS);
-    console.log(hand.preflopProbabilities().p);
+    hand.preflopProbabilities();
+    console.log(hand.prettyPrint());
   });
 
   it('should analyse poker hands correctly - Pocket cards - Suited cards', function() {
