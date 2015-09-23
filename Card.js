@@ -18,12 +18,14 @@
 
 var suites = ['Clubs', 'Spades', 'Diamonds', 'Hearts'];
 
-var ACE = 12;
 var TWO = 0;
 var THREE = 1;
 var FOUR = 2;
 var FIVE = 3;
 var TEN = 8;
+var QUEEN = 10;
+var KING = 11;
+var ACE = 12;
 var ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen',
   'King', 'Ace'];
 
@@ -38,12 +40,14 @@ Card.prototype.prettyPrint = function() {
 };
 
 module.exports = {
-  ACE: ACE,
   TWO: TWO,
   THREE: THREE,
   FOUR: FOUR,
   FIVE: FIVE,
   TEN: TEN,
+  QUEEN: QUEEN,
+  KING: KING,
+  ACE: ACE,
   ranks: ranks,
   suites: suites,
   Card: Card

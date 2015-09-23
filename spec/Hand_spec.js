@@ -49,6 +49,16 @@ describe('Hand', function() {
     console.log(hand.prettyPrint());
   });
 
+  it('should analyse poker hands correctly - Pocket cards - Connected cards', function() {
+    var card1 = new Card('Clubs', '2', true);
+    var card2 = new Card('Spades', '3', true);
+    var hand = new Hand.Hand([card1, card2]);
+    var handRank = hand.calculateHandRank();
+    expect(handRank).toEqual(Hand.CONNECTEDCARDS);
+    hand.preflopProbabilities();
+    console.log(hand.prettyPrint());
+  });
+
   it('should analyse poker hands correctly - Pocket cards - Suited cards', function() {
     var card1 = new Card('Clubs', '2', true);
     var card2 = new Card('Clubs', '6', true);

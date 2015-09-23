@@ -424,78 +424,139 @@ Hand.prototype.preflopProbabilities = function() {
 
       // Straight; possible if two cards are a max. of  4 ranks from each other.
       this.frequency[STRAIGHT] = 0;
+      this.frequency[STRAIGHTFLUSH] = 0;
       // Straight flush (1) is substracted in each case
       // Cases:
       // - 3 cards in between -> two cases: with or without Ace as first card
       if (((this.cards[0].rank + 4) === this.cards[1].rank)  ||
         ((this.cards[1].rank === Card.ACE) && (this.cards[0].rank === Card.FIVE))) {
         this.frequency[STRAIGHT] += 4 * 4 * 4 - 1;
+        this.frequency[STRAIGHTFLUSH] += 1;
       }
       // - 2 in between, 1 before
       if (((this.cards[0].rank + 3) === this.cards[1].rank) &&
         (this.cards[0].rank >= Card.TWO)) {
         this.frequency[STRAIGHT] += 4 * 4 * 4 - 1;
+        this.frequency[STRAIGHTFLUSH] += 1;
       }
       // - 2 in between, 1 after
       if (((this.cards[0].rank + 3) === this.cards[1].rank) &&
         (this.cards[0].rank < Card.ACE)) {
         this.frequency[STRAIGHT] += 4 * 4 * 4 - 1;
+        this.frequency[STRAIGHTFLUSH] += 1;
       }
       // - 1 in between, 2 before
       if (((this.cards[0].rank + 2) === this.cards[1].rank) &&
         (this.cards[0].rank >= Card.THREE)) {
         this.frequency[STRAIGHT] += 4 * 4 * 4 - 1;
+        this.frequency[STRAIGHTFLUSH] += 1;
       }
       // - 1 in between, 2 after
       if (((this.cards[0].rank + 2) === this.cards[1].rank) &&
         (this.cards[1].rank + 1 < Card.ACE)) {
         this.frequency[STRAIGHT] += 4 * 4 * 4 - 1;
+        this.frequency[STRAIGHTFLUSH] += 1;
       }
       // - 1 in between, 1 before, 1 after
       if (((this.cards[0].rank + 2) === this.cards[1].rank) &&
         (this.cards[1].rank < Card.ACE) &&
         (this.cards[0].rank >= Card.TWO)) {
         this.frequency[STRAIGHT] += 4 * 4 * 4 - 1;
+        this.frequency[STRAIGHTFLUSH] += 1;
       }
 
       // Flush: we need three more cards of the same suite, 11 cards available
       // Substract straight flush
       this.frequency[FLUSH] = C(11, 3) - 1;
 
+      // High card: three uniquely ranked cards that do not pair with pocket cards and do not form
+      // a flush or straight
+      this.frequency[HIGHCARD] =
+        // Three uniquely ranked cards, suite is free
+        C(11, 3) * 4 * 4 * 4 -
+          // Substract flushes
+        this.frequency[FLUSH] -
+          // Substract straights
+        this.frequency[STRAIGHT] -
+          // Substract straight flushes
+        this.frequency[STRAIGHTFLUSH];
+
       // Full house: One card is matched once to make a pair, one card is
       // matched twice to make a triple
       this.frequency[FULLHOUSE] = C(3, 2) * C(2, 1) * C(3, 1) * C(1, 1);
-
-      // Straight flush: if a straight is possible, then a straight flush is one
-      // combination
-      if (this.frequency[STRAIGHT]) {
-        this.frequency[STRAIGHTFLUSH] = 1;
-      }
-      else {
-        this.frequency[STRAIGHTFLUSH] = 0;
-      }
 
       // Royal flush: if the pocket cards imply a royal flush
       this.frequency[ROYALFLUSH] = 0;
       break;
     case CONNECTEDCARDS:
-      this.frequency[PAIR] = 0;
+      // Pair: two cases:
+      // - Two ranks and three suites to form a pair, 2 other cards have 11
+      //   ranks left to choose from (but must be unique, suite is free
+      // - Board pairing
+      this.frequency[PAIR] = 2 * 3 * 4 * 4 * C(11, 2) +
+          // Board pairing, third card is from 10 ranks, 4 suites
+        C(11, 1) * C(4, 2) * C(40, 1);
 
-      this.frequency[TWOPAIR] = 0;
+      // Two pair: two cases
+      // - Both pocket cards should be matched: 3 cards to form first
+      //   pair, 3 cards to form second pair, third card has 11 ranks left,
+      //   suite is free
+      // - One matching card and a board pairing
+      this.frequency[TWOPAIR] =  C(3, 1) * C(3, 1) *  C(44, 1) +
+        // Board pairing
+        C(3, 1) * C(2, 1) *  C(4, 2) * C(11, 1);
 
-      this.frequency[THREEOFAKIND] = 0;
+      // Three of a kind: two cases:
+      // - Two cards should match the rank of a pocket card,
+      //   three suites left; third card has 11 ranks left, suite is free
+      // - Board three of a kind
+      this.frequency[THREEOFAKIND] =
+        // Two board cards match pocket cards
+        C(3, 2) * C(2, 1) * C(44, 1) +
+        // Board three of a kind: rank is fixed, suite is 3 of 4 suites
+        C(4, 3) * C(11, 1);
 
-      this.frequency[FOUROFAKIND] = 0;
+      // Full house: One card is matched once to make a pair, one card is
+      // matched twice to make a triple
+      this.frequency[FULLHOUSE] = C(3, 2) * C(2, 1) * C(3, 1) * C(1, 1);
 
+      // Four of a kind: all three cards match a pocket card, there are two
+      // ranks to choose from all three suites are used -> 2 cases
+      this.frequency[FOUROFAKIND] = 2;
+
+      // Straight: cards are connected, so we have the following cases:
       this.frequency[STRAIGHT] = 0;
+      // - three before
+      if (this.cards[0].rank >= Card.FOUR) {
+        this.frequency[STRAIGHT] += 4 * 4 * 4 - 1;
+      }
+      // - two before, one after
+      if ((this.cards[0].rank >= Card.THREE) && (this.cards[1].rank < Card.ACE)) {
+        this.frequency[STRAIGHT] += 4 * 4 * 4 - 1;
+      }
+      // - one before, two after
+      if ((this.cards[0].rank >= Card.TWO) && (this.cards[1].rank < Card.KING)) {
+        this.frequency[STRAIGHT] += 4 * 4 * 4 - 1;
+      }
+      // - three after
+      if (this.cards[1] < Card.QUEEN) {
+        this.frequency[STRAIGHT] += 4 * 4 * 4 - 1;
+      }
 
+      this.frequency[STRAIGHTFLUSH] = 0;
       this.frequency[FLUSH] = 0;
 
       // High card: three uniquely ranked cards that do not pair with pocket cards and do not form
       // a flush or straight
-      this.frequency[HIGHCARD] = 0;
-
-      this.frequency[STRAIGHTFLUSH] = 0;
+      this.frequency[HIGHCARD] =
+        // Three uniquely ranked cards, suite is free
+        C(11, 3) * 4 * 4 * 4 -
+        // Substract flushes
+        0 -
+        // Substract straights
+        this.frequency[STRAIGHT] -
+        // Substract straight flushes
+        this.frequency[STRAIGHTFLUSH];
 
       this.frequency[ROYALFLUSH] = 0;
       break;
@@ -741,26 +802,46 @@ Hand.prototype.calculateHandRank = function() {
   return(this.rank);
 };
 
-Hand.prototype.prettyPrint = function() {
+function spaces(n) {
   var str = '';
+  for (var i = 0; i < n; i++) {
+    str += ' ';
+  }
+  return str;
+}
+
+Hand.prototype.prettyPrint = function() {
+  var str = '===================================\n';
   // Print Hand
   str += 'HAND\n';
   this.cards.forEach(function(c) {
     str += Card.suites[c.suite] + ' ' + Card.ranks[c.rank] + '\n';
   });
-  str += 'Highest rank: ' + this.rank + '\n';
-
-  // Print a priori probability of the hand
-  str += 'A PRIORI PROBABILITY\n';
-  str += this.rankProbability + '\n';
-
+  var handRankName = ';'
+  if (this.cards.length === 2) {
+    handRankName = pocketRankNames[this.rank];
+  }
+  else {
+    handRankName = handRankNames[this.rank];
+  }
+  str += 'Highest rank:         ' + handRankName + '\n';
+  str += 'A priori probability: '+
+    Math.round(10000 * + this.rankProbability)/100 + '%\n';
   // Print conditional probabilities
   str += 'CONDITIONAL PROBABILITIES PREFLOP\n';
   var that = this;
+  str += 'Hand               Freq.    Perc.\n'
+  str += '-----------------------------------\n';
   this.frequency.forEach(function(f, index) {
-    str += handRankNames[index] + ':\t\t' + f + '\t' + that.probability[index] + '\n';
+    var space1 = spaces(24 - handRankNames[index].length - 1 - String(f).length);
+    var percentage = Math.round(10000 * that.probability[index])/100 + '%';
+    var space2 = spaces(8 - percentage.length);
+    str += handRankNames[index] + ':' + space1 + f + space2 + percentage + '\n';
   });
-
+  str += '-----------------------------------\n';
+  str += 'TOTALS:' + spaces(24 - 7 - String(this.totalCombinations).length) +
+    this.totalCombinations + spaces(8 - '100%'.length) + '100%\n';
+  str += '===================================\n';
   return(str);
 };
 
