@@ -796,7 +796,12 @@ Hand.prototype.calculateHandRank = function() {
       break;
   }
   console.log('Number of cards: ' + this.cards.length);
-  console.log('Rank: ' + handRankNames[this.rank]);
+  if (this.cards.length > 2) {
+    console.log('Rank: ' + handRankNames[this.rank]);
+  }
+  else {
+    console.log('Rank: ' + pocketRankNames[this.rank]);
+  }
   var p = 100 * this.rankProbability;
   console.log('Rank probability: ' + p.toFixed(4) + '%');
   return(this.rank);

@@ -21,6 +21,7 @@ var Hand = require('../Hand');
 
 
 describe('Hand', function() {
+  // Pocket cards
   it('should analyse poker hands correctly - Pocket cards - Pair', function() {
     var card1 = new Card('Clubs', '2', true);
     var card2 = new Card('Spades', '2', true);
@@ -93,6 +94,7 @@ describe('Hand', function() {
     expect(handRank).toEqual(Hand.CONNECTEDANDSUITED);
   });
 
+  // 5 card hands
   it('should analyse poker hands correctly - High card', function() {
     var card1 = new Card('Clubs', '2', false);
     var card2 = new Card('Spades', 'Jack', false);
