@@ -92,6 +92,8 @@ describe('Hand', function() {
     var hand = new Hand.Hand([card1, card2]);
     var handRank = hand.calculateHandRank();
     expect(handRank).toEqual(Hand.CONNECTEDANDSUITED);
+    hand.preflopProbabilities();
+    console.log(hand.prettyPrint());
   });
 
   // 5 card hands

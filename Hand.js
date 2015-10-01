@@ -539,12 +539,16 @@ Hand.prototype.preflopProbabilities = function() {
         this.frequency[STRAIGHT] += 4 * 4 * 4 - 1;
       }
       // - three after
-      if (this.cards[1] < Card.QUEEN) {
+      if (this.cards[1].rank < Card.QUEEN) {
         this.frequency[STRAIGHT] += 4 * 4 * 4 - 1;
       }
 
+      // Straight flush is 0 because pocket cards are only connected
       this.frequency[STRAIGHTFLUSH] = 0;
-      this.frequency[FLUSH] = 0;
+
+      // Flush: we need three more cards of the same suite, 11 cards available
+      // Substract straight flush
+      this.frequency[FLUSH] = C(11, 3) - 1;
 
       // High card: three uniquely ranked cards that do not pair with pocket cards and do not form
       // a flush or straight
@@ -563,19 +567,73 @@ Hand.prototype.preflopProbabilities = function() {
     case CONNECTEDANDSUITED:
       this.frequency[HIGHCARD] = 0;
 
-      this.frequency[PAIR] = 0;
+      // Pair: two cases:
+      // - Two ranks and three suites to form a pair, 2 other cards have 11
+      //   ranks left to choose from (but must be unique, suite is free
+      this.frequency[PAIR] = 2 * 3 * 4 * 4 * C(11, 2) +
+          // Board pairing, third card is from 10 ranks, 4 suites
+        C(11, 1) * C(4, 2) * C(40, 1);
 
-      this.frequency[TWOPAIR] = 0;
+      // Two pair: two cases
+      // - Both pocket cards should be matched: 3 cards to form first
+      //   pair, 3 cards to form second pair, third card has 11 ranks left,
+      //   suite is free
+      this.frequency[TWOPAIR] =  C(3, 1) * C(3, 1) *  C(44, 1) +
+        // - One matching card and a board pairing
+        C(3, 1) * C(2, 1) *  C(4, 2) * C(11, 1);
 
-      this.frequency[THREEOFAKIND] = 0;
+      // Three of a kind: two cases:
+      // - Two cards should match the rank of a pocket card,
+      //   three suites left; third card has 11 ranks left, suite is free
+      this.frequency[THREEOFAKIND] =
+        // Two board cards match a pocket card
+        C(3, 2) * C(2, 1) * C(44, 1) +
+          // Board three of a kind: rank is fixed, suite is 3 of 4 suites
+        C(4, 3) * C(11, 1);
 
-      this.frequency[FOUROFAKIND] = 0;
+      // Four of a kind: all three cards match a pocket card, there are two
+      // ranks to choose from all three suites are used -> 2 cases
+      this.frequency[FOUROFAKIND] = 2;
 
+      // Straight: cards are connected, so we have the following cases:
       this.frequency[STRAIGHT] = 0;
-
-      this.frequency[FLUSH] = 0;
-
       this.frequency[STRAIGHTFLUSH] = 0;
+      // - three before
+      if (this.cards[0].rank >= Card.FOUR) {
+        this.frequency[STRAIGHT] += 4 * 4 * 4 - 1;
+        this.frequency[STRAIGHTFLUSH] += 1;
+      }
+      // - two before, one after
+      if ((this.cards[0].rank >= Card.THREE) && (this.cards[1].rank < Card.ACE)) {
+        this.frequency[STRAIGHT] += 4 * 4 * 4 - 1;
+        this.frequency[STRAIGHTFLUSH] += 1;
+      }
+      // - one before, two after
+      if ((this.cards[0].rank >= Card.TWO) && (this.cards[1].rank < Card.KING)) {
+        this.frequency[STRAIGHT] += 4 * 4 * 4 - 1;
+        this.frequency[STRAIGHTFLUSH] += 1;
+      }
+      // - three after
+      if (this.cards[1].rank < Card.QUEEN) {
+        this.frequency[STRAIGHT] += 4 * 4 * 4 - 1;
+        this.frequency[STRAIGHTFLUSH] += 1;
+      }
+
+      // Flush: we have two cards of the same suite: 11 ranks left, suite is
+      // fixed, substract straight flushes
+      this.frequency[FLUSH] = C(11, 3) - this.frequency[STRAIGHTFLUSH];
+
+      // High card: three uniquely ranked cards that do not pair with pocket cards and do not form
+      // a flush or straight or straight flush
+      this.frequency[HIGHCARD] =
+        // Three uniquely ranked cards, suite is free
+        C(11, 3) * 4 * 4 * 4 -
+          // Substract flushes
+        this.frequency[FLUSH] -
+          // Substract straights
+        this.frequency[STRAIGHT] -
+          // Substract straight flushes
+        this.frequency[STRAIGHTFLUSH];
 
       this.frequency[ROYALFLUSH] = 0;
       break;
