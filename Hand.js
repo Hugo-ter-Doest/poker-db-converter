@@ -565,8 +565,6 @@ Hand.prototype.preflopProbabilities = function() {
       this.frequency[ROYALFLUSH] = 0;
       break;
     case CONNECTEDANDSUITED:
-      this.frequency[HIGHCARD] = 0;
-
       // Pair: two cases:
       // - Two ranks and three suites to form a pair, 2 other cards have 11
       //   ranks left to choose from (but must be unique, suite is free
