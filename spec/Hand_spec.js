@@ -60,14 +60,6 @@ describe('Hand', function() {
     console.log(hand.prettyPrint());
   });
 
-  it('should analyse poker hands correctly - Pocket cards - Suited cards', function() {
-    var card1 = new Card('Clubs', '2', true);
-    var card2 = new Card('Clubs', '6', true);
-    var hand = new Hand.Hand([card1, card2]);
-    var handRank = hand.calculateHandRank();
-    expect(handRank).toEqual(Hand.SUITEDCARDS);
-  });
-
   it('should analyse poker hands correctly - Pocket cards - Connected cards', function() {
     var card1 = new Card('Clubs', '2', true);
     var card2 = new Card('Spades', '3', true);
@@ -106,6 +98,35 @@ describe('Hand', function() {
     var hand = new Hand.Hand([card1, card2, card3, card4, card5]);
     var handRank = hand.calculateHandRank();
     expect(handRank).toEqual(Hand.HIGHCARD);
+    hand.flopProbabilities();
+    console.log(hand.prettyPrint());
+  });
+
+  it('should analyse poker hands correctly - High card is a Straight draw', function() {
+    var card1 = new Card('Clubs', '2', false);
+    var card2 = new Card('Spades', '3', false);
+    var card3 = new Card('Clubs', '5', false);
+    var card4 = new Card('Hearts', '6', true);
+    var card5 = new Card('Hearts', 'Queen', true);
+    var hand = new Hand.Hand([card1, card2, card3, card4, card5]);
+    var handRank = hand.calculateHandRank();
+    expect(handRank).toEqual(Hand.HIGHCARD);
+    hand.flopProbabilities();
+    console.log(hand.prettyPrint());
+  });
+
+  it('should analyse poker hands correctly - High card is a Straight' +
+    ' Flush draw', function() {
+    var card1 = new Card('Clubs', '2', false);
+    var card2 = new Card('Clubs', '3', false);
+    var card3 = new Card('Hearts', 'Queen', true);
+    var card4 = new Card('Clubs', '5', false);
+    var card5 = new Card('Clubs', '6', true);
+    var hand = new Hand.Hand([card1, card2, card3, card4, card5]);
+    var handRank = hand.calculateHandRank();
+    expect(handRank).toEqual(Hand.HIGHCARD);
+    hand.flopProbabilities();
+    console.log(hand.prettyPrint());
   });
 
   it('should analyse poker hands correctly - Pair', function() {
@@ -117,6 +138,8 @@ describe('Hand', function() {
     var hand = new Hand.Hand([card1, card2, card3, card4, card5]);
     var handRank = hand.calculateHandRank();
     expect(handRank).toEqual(Hand.PAIR);
+    hand.flopProbabilities();
+    console.log(hand.prettyPrint());
   });
 
   it('should analyse poker hands correctly - Two pair', function() {
@@ -128,6 +151,8 @@ describe('Hand', function() {
     var hand = new Hand.Hand([card1, card2, card3, card4, card5]);
     var handRank = hand.calculateHandRank();
     expect(handRank).toEqual(Hand.TWOPAIR);
+    hand.flopProbabilities();
+    console.log(hand.prettyPrint());
   });
 
   it('should analyse poker hands correctly - Three of a kind', function() {
