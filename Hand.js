@@ -843,19 +843,53 @@ Hand.prototype.flopProbabilities = function() {
 
       break;
     case THREEOFAKIND:
-      this.frequency[THREEOFAKIND] = 0;
+      // Three of a Kind: should not match the Three of a Kind and not the
+      // other two cards -> 13 - 3 ranks left, suites are free
+      this.frequency[THREEOFAKIND] = 10 * 4;
+
+      // Straight: is not possible
       this.frequency[STRAIGHT] = 0;
+
+      // Flush: is not possible
       this.frequency[FLUSH] = 0;
-      this.frequency[FULLHOUSE] = 0;
-      this.frequency[FOUROFAKIND] = 0;
+
+      // Full house: match one of the free cards -> 2 ranks, 3 suites
+      this.frequency[FULLHOUSE] = 2 * 3;
+
+      // Four of a Kind: 1 rank, 1 suite
+      this.frequency[FOUROFAKIND] = 1;
+
+      // Straight Flush: is not possible
       this.frequency[STRAIGHTFLUSH] = 0;
+
+      // Royal Flush: is not possible
       this.frequency[ROYALFLUSH] = 0;
+
       break;
     case STRAIGHT:
-      this.frequency[STRAIGHT] = 0;
-      this.frequency[FLUSH] = 0;
-      this.frequency[FULLHOUSE] = 0;
+      var isFlushDraw = this.isFlushDraw();
+
+      // Straight Flush: if it is a Flush draw then one card of the Straight
+      // must be replaced with the right suite
       this.frequency[STRAIGHTFLUSH] = 0;
+      if (isFlushDraw) {
+        this.frequency[STRAIGHTFLUSH] = 1;
+      }
+
+      this.frequency[FLUSH] = 0;
+      if (isFlushDraw) {
+        this.frequency[FLUSH] = 9;
+      }
+
+      // Straight: the fifth card should not make it a Flush or a
+      // Straight Flush
+      this.frequency[STRAIGHT] = 47 -
+        this.frequency[FLUSH] -
+        this.frequency[STRAIGHTFLUSH];
+
+      // Full house: is not possible
+      this.frequency[FULLHOUSE] = 0;
+
       this.frequency[ROYALFLUSH] = 0;
       break;
     case FLUSH:

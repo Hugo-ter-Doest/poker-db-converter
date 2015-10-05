@@ -164,6 +164,8 @@ describe('Hand', function() {
     var hand = new Hand.Hand([card1, card2, card3, card4, card5]);
     var handRank = hand.calculateHandRank();
     expect(handRank).toEqual(Hand.THREEOFAKIND);
+    hand.flopProbabilities();
+    console.log(hand.prettyPrint());
   });
 
   it('should analyse poker hands correctly - Straight', function() {
@@ -175,6 +177,22 @@ describe('Hand', function() {
     var hand = new Hand.Hand([card1, card2, card3, card4, card5]);
     var handRank = hand.calculateHandRank();
     expect(handRank).toEqual(Hand.STRAIGHT);
+    hand.flopProbabilities();
+    console.log(hand.prettyPrint());
+  });
+
+  it('should analyse poker hands correctly - Straight (which is a Flush' +
+    ' draw)', function() {
+    var card1 = new Card('Clubs', '2', false);
+    var card2 = new Card('Clubs', '3', false);
+    var card3 = new Card('Clubs', '5', true);
+    var card4 = new Card('Clubs', '4', false);
+    var card5 = new Card('Hearts', '6', true);
+    var hand = new Hand.Hand([card1, card2, card3, card4, card5]);
+    var handRank = hand.calculateHandRank();
+    expect(handRank).toEqual(Hand.STRAIGHT);
+    hand.flopProbabilities();
+    console.log(hand.prettyPrint());
   });
 
   // Straight with an Ace as 1
