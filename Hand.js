@@ -254,11 +254,24 @@ function C(n, k) {
   return coeff;
 }
 
+Hand.prototype.initFrequencies = function() {
+  this.frequency = [];
+  this.frequency[HIGHCARD] = 0;
+  this.frequency[PAIR] = 0;
+  this.frequency[TWOPAIR] = 0;
+  this.frequency[THREEOFAKIND] = 0;
+  this.frequency[STRAIGHT] = 0;
+  this.frequency[FLUSH] = 0;
+  this.frequency[FULLHOUSE] = 0;
+  this.frequency[FOUROFAKIND] = 0;
+  this.frequency[STRAIGHTFLUSH] = 0;
+  this.frequency[ROYALFLUSH] = 0;
+};
+
 // Calculates conditional probabilities given a hand with two cards
 // Maps hand rank to new (better) hand ranks
 Hand.prototype.preflopProbabilities = function() {
-  this.frequency = [];
-  this.probability = [];
+  this.initFrequencies();
   this.totalCombinations = C(50, 3);
   // Depending on the hand rank we calculate the probabilities of
   // a new rank
@@ -638,10 +651,6 @@ Hand.prototype.preflopProbabilities = function() {
       this.frequency[ROYALFLUSH] = 0;
       break;
   }
-  var that = this;
-  this.frequency.forEach(function(f, index) {
-    that.probability[index] = f / that.totalCombinations;
-  });
 };
 
 // Precondition: cards are ordered, Ace is highest card, hand rank is High Card
@@ -717,8 +726,7 @@ Hand.prototype.isFlushDraw = function() {
 // Calculates conditional probabilities given a hand of five cards
 // Maps hand rank to new (better) hand ranks
 Hand.prototype.flopProbabilities = function() {
-  this.frequency = [];
-  this.probability = [];
+  this.initFrequencies();
   // 52 - 5 cards left to choose from
   this.totalCombinations = C(47, 1);
   switch (this.rank) {
@@ -742,6 +750,7 @@ Hand.prototype.flopProbabilities = function() {
       // 5 ranks to choose from, suite is free
       this.frequency[PAIR] = 5 * 3;
 
+      // Two pair: is not possible
       this.frequency[TWOPAIR] = 0;
 
       // For a straight we should investigate the hand for draws:
@@ -893,17 +902,32 @@ Hand.prototype.flopProbabilities = function() {
       this.frequency[ROYALFLUSH] = 0;
       break;
     case FLUSH:
-      this.frequency[FLUSH] = 0;
-      this.frequency[FULLHOUSE] = 0;
+      // Straight Flush: if it is a Straight draw, we have an out for
+      // Straight Flush
       this.frequency[STRAIGHTFLUSH] = 0;
+      if (this.isStraightDraw()) {
+        this.frequency[STRAIGHTFLUSH] = 1;
+      }
+      // Flush: all possible cards minus possibility of a Straight Flush
+      this.frequency[FLUSH] = 47 - this.frequency[STRAIGHTFLUSH];
+
+      // Full House: not possible
+      this.frequency[FULLHOUSE] = 0;
+
       this.frequency[ROYALFLUSH] = 0;
       break;
     case FULLHOUSE:
-      this.frequency[FULLHOUSE] = 0;
-      this.frequency[FOUROFAKIND] = 0;
+
+      // Four of a Kind: 2 + 3 cards lead to a Four of a Kind
+      this.frequency[FOUROFAKIND] = 2 + 3;
+
+      // Full House: card should not make a four of a kind
+      this.frequency[FULLHOUSE] = 47 - this.frequency[FOUROFAKIND];
+
       break;
     case FOUROFAKIND:
-      this.frequency[FOUROFAKIND] = 0;
+      // All posssible cards lead to Four of a Kind again
+      this.frequency[FOUROFAKIND] = 47;
       break;
     case STRAIGHTFLUSH:
       this.frequency[ROYALFLUSH] = 0;
@@ -912,14 +936,135 @@ Hand.prototype.flopProbabilities = function() {
       this.frequency[ROYALFLUSH] = 1;
       break;
   }
-  var that = this;
-  this.frequency.forEach(function(f, index) {
-    that.probability[index] = f / that.totalCombinations;
-  });
 };
 
+// Calculates the probabilities of new hands at the turn
 Hand.prototype.turnProbabilities = function() {
-
+  this.initFrequencies();
+  // 52 - 6 cards left to choose from
+  this.totalCombinations = 46;
+  switch(this.rank) {
+    case HIGHCARD:
+      this.frequency[HIGHCARD] = 0;
+      this.frequency[PAIR] = 0;
+      this.frequency[TWOPAIR] = 0;
+      this.frequency[THREEOFAKIND] = 0;
+      this.frequency[STRAIGHT] = 0;
+      this.frequency[FLUSH] = 0;
+      this.frequency[FULLHOUSE] = 0;
+      this.frequency[FOUROFAKIND] = 0;
+      this.frequency[STRAIGHTFLUSH] = 0;
+      this.frequency[ROYALFLUSH] = 0;
+      break;
+    case PAIR:
+      this.frequency[HIGHCARD] = 0;
+      this.frequency[PAIR] = 0;
+      this.frequency[TWOPAIR] = 0;
+      this.frequency[THREEOFAKIND] = 0;
+      this.frequency[STRAIGHT] = 0;
+      this.frequency[FLUSH] = 0;
+      this.frequency[FULLHOUSE] = 0;
+      this.frequency[FOUROFAKIND] = 0;
+      this.frequency[STRAIGHTFLUSH] = 0;
+      this.frequency[ROYALFLUSH] = 0;
+      break;
+    case TWOPAIR:
+      this.frequency[HIGHCARD] = 0;
+      this.frequency[PAIR] = 0;
+      this.frequency[TWOPAIR] = 0;
+      this.frequency[THREEOFAKIND] = 0;
+      this.frequency[STRAIGHT] = 0;
+      this.frequency[FLUSH] = 0;
+      this.frequency[FULLHOUSE] = 0;
+      this.frequency[FOUROFAKIND] = 0;
+      this.frequency[STRAIGHTFLUSH] = 0;
+      this.frequency[ROYALFLUSH] = 0;
+      break;
+    case THREEOFAKIND:
+      this.frequency[HIGHCARD] = 0;
+      this.frequency[PAIR] = 0;
+      this.frequency[TWOPAIR] = 0;
+      this.frequency[THREEOFAKIND] = 0;
+      this.frequency[STRAIGHT] = 0;
+      this.frequency[FLUSH] = 0;
+      this.frequency[FULLHOUSE] = 0;
+      this.frequency[FOUROFAKIND] = 0;
+      this.frequency[STRAIGHTFLUSH] = 0;
+      this.frequency[ROYALFLUSH] = 0;
+      break;
+    case STRAIGHT:
+      this.frequency[HIGHCARD] = 0;
+      this.frequency[PAIR] = 0;
+      this.frequency[TWOPAIR] = 0;
+      this.frequency[THREEOFAKIND] = 0;
+      this.frequency[STRAIGHT] = 0;
+      this.frequency[FLUSH] = 0;
+      this.frequency[FULLHOUSE] = 0;
+      this.frequency[FOUROFAKIND] = 0;
+      this.frequency[STRAIGHTFLUSH] = 0;
+      this.frequency[ROYALFLUSH] = 0;
+      break;
+    case FLUSH:
+      this.frequency[HIGHCARD] = 0;
+      this.frequency[PAIR] = 0;
+      this.frequency[TWOPAIR] = 0;
+      this.frequency[THREEOFAKIND] = 0;
+      this.frequency[STRAIGHT] = 0;
+      this.frequency[FLUSH] = 0;
+      this.frequency[FULLHOUSE] = 0;
+      this.frequency[FOUROFAKIND] = 0;
+      this.frequency[STRAIGHTFLUSH] = 0;
+      this.frequency[ROYALFLUSH] = 0;
+      break;
+    case FULLHOUSE:
+      this.frequency[HIGHCARD] = 0;
+      this.frequency[PAIR] = 0;
+      this.frequency[TWOPAIR] = 0;
+      this.frequency[THREEOFAKIND] = 0;
+      this.frequency[STRAIGHT] = 0;
+      this.frequency[FLUSH] = 0;
+      this.frequency[FULLHOUSE] = 0;
+      this.frequency[FOUROFAKIND] = 0;
+      this.frequency[STRAIGHTFLUSH] = 0;
+      this.frequency[ROYALFLUSH] = 0;
+      break;
+    case FOUROFAKIND:
+      this.frequency[HIGHCARD] = 0;
+      this.frequency[PAIR] = 0;
+      this.frequency[TWOPAIR] = 0;
+      this.frequency[THREEOFAKIND] = 0;
+      this.frequency[STRAIGHT] = 0;
+      this.frequency[FLUSH] = 0;
+      this.frequency[FULLHOUSE] = 0;
+      this.frequency[FOUROFAKIND] = 0;
+      this.frequency[STRAIGHTFLUSH] = 0;
+      this.frequency[ROYALFLUSH] = 0;
+      break;
+    case STRAIGHTFLUSH:
+      this.frequency[HIGHCARD] = 0;
+      this.frequency[PAIR] = 0;
+      this.frequency[TWOPAIR] = 0;
+      this.frequency[THREEOFAKIND] = 0;
+      this.frequency[STRAIGHT] = 0;
+      this.frequency[FLUSH] = 0;
+      this.frequency[FULLHOUSE] = 0;
+      this.frequency[FOUROFAKIND] = 0;
+      this.frequency[STRAIGHTFLUSH] = 0;
+      this.frequency[ROYALFLUSH] = 0;
+      break;
+    case ROYALFLUSH:
+      this.frequency[HIGHCARD] = 0;
+      this.frequency[PAIR] = 0;
+      this.frequency[TWOPAIR] = 0;
+      this.frequency[THREEOFAKIND] = 0;
+      this.frequency[STRAIGHT] = 0;
+      this.frequency[FLUSH] = 0;
+      this.frequency[FULLHOUSE] = 0;
+      this.frequency[FOUROFAKIND] = 0;
+      this.frequency[STRAIGHTFLUSH] = 0;
+      this.frequency[ROYALFLUSH] = 0;
+      break;
+  }
 };
 
 Hand.prototype.isFlush = function() {
@@ -1162,11 +1307,13 @@ Hand.prototype.prettyPrint = function() {
   str += '-----------------------------------\n';
   var sumFreq = 0;
   this.frequency.forEach(function(f, index) {
-    var space1 = spaces(24 - handRankNames[index].length - 1 - String(f).length);
-    var percentage = Math.round(10000 * that.probability[index])/100 + '%';
-    var space2 = spaces(8 - percentage.length);
-    str += handRankNames[index] + ':' + space1 + f + space2 + percentage + '\n';
-    sumFreq += f;
+    if (f) {
+      var space1 = spaces(24 - handRankNames[index].length - 1 - String(f).length);
+      var percentage = Math.round(10000 * that.frequency[index] / that.totalCombinations) / 100 + '%';
+      var space2 = spaces(8 - percentage.length);
+      str += handRankNames[index] + ':' + space1 + f + space2 + percentage + '\n';
+      sumFreq += f;
+    }
   });
   str += '-----------------------------------\n';
   str += 'TOTALS:' + spaces(24 - 7 - String(sumFreq).length) +
