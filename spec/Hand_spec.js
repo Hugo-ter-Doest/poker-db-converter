@@ -205,9 +205,12 @@ describe('Hand', function() {
     var hand = new Hand.Hand([card1, card2, card3, card4, card5]);
     var handRank = hand.calculateHandRank();
     expect(handRank).toEqual(Hand.STRAIGHT);
+    hand.flopProbabilities();
+    console.log(hand.prettyPrint());
   });
 
-  it('should analyse poker hands correctly - Flush', function() {
+  it('should analyse poker hands correctly - Flush (which is a Straight' +
+    ' draw)', function() {
     var card1 = new Card('Clubs', '2', false);
     var card2 = new Card('Clubs', '3', false);
     var card3 = new Card('Clubs', '5', true);
@@ -216,6 +219,8 @@ describe('Hand', function() {
     var hand = new Hand.Hand([card1, card2, card3, card4, card5]);
     var handRank = hand.calculateHandRank();
     expect(handRank).toEqual(Hand.FLUSH);
+    hand.flopProbabilities();
+    console.log(hand.prettyPrint());
   });
 
   it('should analyse poker hands correctly - Full house', function() {
@@ -227,6 +232,8 @@ describe('Hand', function() {
     var hand = new Hand.Hand([card1, card2, card3, card4, card5]);
     var handRank = hand.calculateHandRank();
     expect(handRank).toEqual(Hand.FULLHOUSE);
+    hand.flopProbabilities();
+    console.log(hand.prettyPrint());
   });
 
   it('should analyse poker hands correctly - Four of a kind', function() {
@@ -238,6 +245,8 @@ describe('Hand', function() {
     var hand = new Hand.Hand([card1, card2, card3, card4, card5]);
     var handRank = hand.calculateHandRank();
     expect(handRank).toEqual(Hand.FOUROFAKIND);
+    hand.flopProbabilities();
+    console.log(hand.prettyPrint());
   });
 
   it('should analyse poker hands correctly - Straight flush', function() {
@@ -249,6 +258,22 @@ describe('Hand', function() {
     var hand = new Hand.Hand([card1, card2, card3, card4, card5]);
     var handRank = hand.calculateHandRank();
     expect(handRank).toEqual(Hand.STRAIGHTFLUSH);
+    hand.flopProbabilities();
+    console.log(hand.prettyPrint());
+  });
+
+  it('should analyse poker hands correctly - Straight flush (highest rank is' +
+    ' King)', function() {
+    var card1 = new Card('Clubs', '9', false);
+    var card2 = new Card('Clubs', '10', false);
+    var card3 = new Card('Clubs', 'Jack', true);
+    var card4 = new Card('Clubs', 'Queen', false);
+    var card5 = new Card('Clubs', 'King', true);
+    var hand = new Hand.Hand([card1, card2, card3, card4, card5]);
+    var handRank = hand.calculateHandRank();
+    expect(handRank).toEqual(Hand.STRAIGHTFLUSH);
+    hand.flopProbabilities();
+    console.log(hand.prettyPrint());
   });
 
   it('should analyse poker hands correctly - Royal flush', function() {
@@ -260,6 +285,8 @@ describe('Hand', function() {
     var hand = new Hand.Hand([card1, card2, card3, card4, card5]);
     var handRank = hand.calculateHandRank();
     expect(handRank).toEqual(Hand.ROYALFLUSH);
+    hand.flopProbabilities();
+    console.log(hand.prettyPrint());
   });
 
 });

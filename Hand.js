@@ -904,7 +904,6 @@ Hand.prototype.flopProbabilities = function() {
     case FLUSH:
       // Straight Flush: if it is a Straight draw, we have an out for
       // Straight Flush
-      this.frequency[STRAIGHTFLUSH] = 0;
       if (this.isStraightDraw()) {
         this.frequency[STRAIGHTFLUSH] = 1;
       }
@@ -917,9 +916,8 @@ Hand.prototype.flopProbabilities = function() {
       this.frequency[ROYALFLUSH] = 0;
       break;
     case FULLHOUSE:
-
-      // Four of a Kind: 2 + 3 cards lead to a Four of a Kind
-      this.frequency[FOUROFAKIND] = 2 + 3;
+      // Four of a Kind: 1 card leads to a Four of a Kind
+      this.frequency[FOUROFAKIND] = 1;
 
       // Full House: card should not make a four of a kind
       this.frequency[FULLHOUSE] = 47 - this.frequency[FOUROFAKIND];
@@ -930,10 +928,21 @@ Hand.prototype.flopProbabilities = function() {
       this.frequency[FOUROFAKIND] = 47;
       break;
     case STRAIGHTFLUSH:
-      this.frequency[ROYALFLUSH] = 0;
+      // Royal Flush: happens if the straight is 9-10-J-Q-K
+      if ((this.cards[0].rank === Card.NINE) &&
+          (this.cards[1].rank === Card.TEN) &&
+          (this.cards[2].rank === Card.JACK) &&
+          (this.cards[3].rank === Card.QUEEN)  &&
+          (this.cards[4].rank === Card.KING)) {
+        this.frequency[ROYALFLUSH] = 1;
+      }
+
+      // Straight Flush: all cards minus Royal Flush
+      this.frequency[STRAIGHTFLUSH] = 47 -
+        this.frequency[ROYALFLUSH];
       break;
     case ROYALFLUSH:
-      this.frequency[ROYALFLUSH] = 1;
+      this.frequency[ROYALFLUSH] = 47;
       break;
   }
 };

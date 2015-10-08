@@ -22,7 +22,9 @@ var TWO = 0;
 var THREE = 1;
 var FOUR = 2;
 var FIVE = 3;
+var NINE= 7;
 var TEN = 8;
+var JACK = 9;
 var QUEEN = 10;
 var KING = 11;
 var ACE = 12;
@@ -44,7 +46,9 @@ module.exports = {
   THREE: THREE,
   FOUR: FOUR,
   FIVE: FIVE,
+  NINE: NINE,
   TEN: TEN,
+  JACK: JACK,
   QUEEN: QUEEN,
   KING: KING,
   ACE: ACE,
