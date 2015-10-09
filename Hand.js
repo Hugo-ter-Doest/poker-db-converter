@@ -954,20 +954,52 @@ Hand.prototype.turnProbabilities = function() {
   this.totalCombinations = 46;
   switch(this.rank) {
     case HIGHCARD:
-      this.frequency[HIGHCARD] = 0;
-      this.frequency[PAIR] = 0;
-      this.frequency[TWOPAIR] = 0;
+      // Pair: Each rank leads to a pair
+      this.frequency[PAIR] = 6 * 3;
+
+      // Two pair: is not possible
+      //this.frequency[TWOPAIR] = 0;
+
+      // Three of a Kind: is not possible
       this.frequency[THREEOFAKIND] = 0;
-      this.frequency[STRAIGHT] = 0;
-      this.frequency[FLUSH] = 0;
-      this.frequency[FULLHOUSE] = 0;
-      this.frequency[FOUROFAKIND] = 0;
-      this.frequency[STRAIGHTFLUSH] = 0;
+
+      var isStraightDraw = this.isStraightDraw();
+      var isFlushDraw = this.isFlushDraw();
+      if (isStraightDraw) {
+        this.frequency[STRAIGHT] = 4;
+      }
+
+      if (isFlushDraw) {
+        // One suite of which 13-4 ranks are left
+        this.frequency[FLUSH] = 9;
+      }
+
+      // Full House: is not possible
+      //this.frequency[FULLHOUSE] = 0;
+
+      // Four of a Kind: is not possible
+      //this.frequency[FOUROFAKIND] = 0;
+
+      if (isFlushDraw && isStraightDraw) {
+        this.frequency[STRAIGHTFLUSH] = 1;
+      }
+
       this.frequency[ROYALFLUSH] = 0;
+
+      // High Card: 6 unique ranks -> 7 ranks left minus possibilities for
+      // Straight and Flush and Straight Flush
+      this.frequency[HIGHCARD] = 7 * 4 -
+        this.frequency[FLUSH] -
+        this.frequency[STRAIGHT] -
+        this.frequency[STRAIGHTFLUSH];
       break;
     case PAIR:
-      this.frequency[HIGHCARD] = 0;
-      this.frequency[PAIR] = 0;
+      // High Card: is not possible
+      //this.frequency[HIGHCARD] = 0;
+
+      // Pair: should not match any of the ranks in the hand
+      this.frequency[PAIR] = 46 - 4 * 3 - 2;
+
       this.frequency[TWOPAIR] = 0;
       this.frequency[THREEOFAKIND] = 0;
       this.frequency[STRAIGHT] = 0;
