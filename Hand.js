@@ -947,6 +947,10 @@ Hand.prototype.flopProbabilities = function() {
   }
 };
 
+Hand.prototype.higherStraightIsPossible = function() {
+
+};
+
 // Calculates the probabilities of new hands at the turn
 Hand.prototype.turnProbabilities = function() {
   this.initFrequencies();
@@ -993,6 +997,7 @@ Hand.prototype.turnProbabilities = function() {
         this.frequency[STRAIGHT] -
         this.frequency[STRAIGHTFLUSH];
       break;
+
     case PAIR:
       // High Card: is not possible
       //this.frequency[HIGHCARD] = 0;
@@ -1000,49 +1005,149 @@ Hand.prototype.turnProbabilities = function() {
       // Pair: should not match any of the ranks in the hand
       this.frequency[PAIR] = 46 - 4 * 3 - 2;
 
-      this.frequency[TWOPAIR] = 0;
-      this.frequency[THREEOFAKIND] = 0;
-      this.frequency[STRAIGHT] = 0;
-      this.frequency[FLUSH] = 0;
-      this.frequency[FULLHOUSE] = 0;
-      this.frequency[FOUROFAKIND] = 0;
-      this.frequency[STRAIGHTFLUSH] = 0;
+      // Two Pair: should match one of the 4 non-pair cards
+      this.frequency[TWOPAIR] = 4 * 3;
+
+      // Three of a Kind: match the pair
+      this.frequency[THREEOFAKIND] = 2;
+
+      var isStraightDraw = this.isStraightDraw();
+      var isFlushDraw = this.isFlushDraw();
+
+      if (isStraightDraw) {
+        this.frequency[STRAIGHT] = 4;
+      }
+
+      if (isFlushDraw) {
+        this.frequency[FLUSH] = 9;
+      }
+
+      // Full House: is not possible
+      //this.frequency[FULLHOUSE] = 0;
+
+      // Four of a Kind: is not possible
+      //this.frequency[FOUROFAKIND] = 0;
+
+      if (isStraightDraw && isFlushDraw) {
+        this.frequency[STRAIGHTFLUSH] = 1;
+      }
+
       this.frequency[ROYALFLUSH] = 0;
       break;
+
     case TWOPAIR:
-      this.frequency[HIGHCARD] = 0;
-      this.frequency[PAIR] = 0;
-      this.frequency[TWOPAIR] = 0;
-      this.frequency[THREEOFAKIND] = 0;
-      this.frequency[STRAIGHT] = 0;
-      this.frequency[FLUSH] = 0;
-      this.frequency[FULLHOUSE] = 0;
-      this.frequency[FOUROFAKIND] = 0;
-      this.frequency[STRAIGHTFLUSH] = 0;
+      // High Card: is not possible
+      //this.frequency[HIGHCARD] = 0;
+
+      // Pair: is not possible
+      //this.frequency[PAIR] = 0;
+
+      // Two Pair: should not match any of the ranks
+      this.frequency[TWOPAIR] = 46 - 2 * 2 - 2 * 4;
+
+      // Three of a Kind: not possible as this would imply a Full House
+      //this.frequency[THREEOFAKIND] = 0;
+
+      var isStraightDraw = this.isStraightDraw();
+      var isFlushDraw = this.isFlushDraw();
+
+      // Straight: one more rank may result in a straight
+      if (isStraightDraw) {
+        this.frequency[STRAIGHT] = 4;
+      }
+
+      if (isFlushDraw) {
+        this.frequency[FLUSH] = 9;
+      }
+
+      // Full House: match one of the pairs
+      this.frequency[FULLHOUSE] = 2 * 2;
+
+      // Four of a Kind: is not possible
+      //this.frequency[FOUROFAKIND] = 0;
+
+      if (isStraightDraw && isFlushDraw) {
+        this.frequency[STRAIGHTFLUSH] = 1;
+      }
+
       this.frequency[ROYALFLUSH] = 0;
       break;
+
     case THREEOFAKIND:
-      this.frequency[HIGHCARD] = 0;
-      this.frequency[PAIR] = 0;
-      this.frequency[TWOPAIR] = 0;
-      this.frequency[THREEOFAKIND] = 0;
-      this.frequency[STRAIGHT] = 0;
-      this.frequency[FLUSH] = 0;
-      this.frequency[FULLHOUSE] = 0;
-      this.frequency[FOUROFAKIND] = 0;
-      this.frequency[STRAIGHTFLUSH] = 0;
+      // High Card: is not possible
+      //this.frequency[HIGHCARD] = 0;
+
+      // Pair: is not possible
+      //this.frequency[PAIR] = 0;
+
+      // Two Pair: is not possible
+      //this.frequency[TWOPAIR] = 0;
+
+      // Three of a Kind: should not match any of the 4 ranks used in the hand
+      this.frequency[THREEOFAKIND] = 46 - 1 - 3 * 3;
+
+      var isStraightDraw = this.isStraightDraw();
+      var isFlushDraw = this.isFlushDraw();
+
+      // Straight: may be a Straight Draw
+      if (isStraightDraw) {
+        this.frequency[STRAIGHT] = 4;
+      }
+
+      if (isFlushDraw) {
+        this.frequency[FLUSH] = 9;
+      }
+
+      if (isFlushDraw && isStraightDraw) {
+        this.frequency[STRAIGHTFLUSH] = 1;
+      }
+
+      // Full House: match one of the single ranks in the hand
+      this.frequency[FULLHOUSE] = 3 * 3;
+
+      // Four of a Kind: match the rank of the Three of a Kind
+      this.frequency[FOUROFAKIND] = 1;
+
       this.frequency[ROYALFLUSH] = 0;
       break;
+
     case STRAIGHT:
-      this.frequency[HIGHCARD] = 0;
-      this.frequency[PAIR] = 0;
-      this.frequency[TWOPAIR] = 0;
-      this.frequency[THREEOFAKIND] = 0;
-      this.frequency[STRAIGHT] = 0;
-      this.frequency[FLUSH] = 0;
-      this.frequency[FULLHOUSE] = 0;
-      this.frequency[FOUROFAKIND] = 0;
-      this.frequency[STRAIGHTFLUSH] = 0;
+      // High Card: is not possible
+      //this.frequency[HIGHCARD] = 0;
+
+      // Pair: is not possible
+      //this.frequency[PAIR] = 0;
+
+      // Two Pair: is not possible
+      //this.frequency[TWOPAIR] = 0;
+
+      // Three of a Kind: is not possible
+      //this.frequency[THREEOFAKIND] = 0;
+
+      // Straight: should not match any of the 6 ranks in the hand
+      // Also a higher straight may be possible
+      this.frequency[STRAIGHT] = 46 - 6 * 3;
+      if (this.higherStraightIsPossible()) {
+        this.frequency[STRAIGHT] += 1;
+      }
+
+      var isFlushDraw = this.isFlushDraw();
+
+      if (isFlushDraw) {
+        this.frequency[STRAIGHTFLUSH] = 1;
+      }
+
+      // Flush: add a card with the right suite, but should not make a Straight
+      if (isFlushDraw) {
+        this.frequency[FLUSH] = 12 - 3 - this.frequency[STRAIGHTFLUSH];
+      }
+
+      // Full House: is not possible
+      //this.frequency[FULLHOUSE] = 0;
+
+      // Four of a Kind: is not possible
+      //this.frequency[FOUROFAKIND] = 0;
+
       this.frequency[ROYALFLUSH] = 0;
       break;
     case FLUSH:
