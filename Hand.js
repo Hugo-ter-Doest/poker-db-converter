@@ -1128,7 +1128,7 @@ Hand.prototype.turnProbabilities = function() {
       // Also a higher straight may be possible
       this.frequency[STRAIGHT] = 46 - 6 * 3;
       if (this.higherStraightIsPossible()) {
-        this.frequency[STRAIGHT] += 1;
+        this.frequency[STRAIGHT] += 4;
       }
 
       var isFlushDraw = this.isFlushDraw();
@@ -1151,15 +1151,35 @@ Hand.prototype.turnProbabilities = function() {
       this.frequency[ROYALFLUSH] = 0;
       break;
     case FLUSH:
-      this.frequency[HIGHCARD] = 0;
-      this.frequency[PAIR] = 0;
-      this.frequency[TWOPAIR] = 0;
-      this.frequency[THREEOFAKIND] = 0;
-      this.frequency[STRAIGHT] = 0;
-      this.frequency[FLUSH] = 0;
-      this.frequency[FULLHOUSE] = 0;
-      this.frequency[FOUROFAKIND] = 0;
-      this.frequency[STRAIGHTFLUSH] = 0;
+      // High Card: is not possible
+      //this.frequency[HIGHCARD] = 0;
+
+      // Pair: is not possible
+      //this.frequency[PAIR] = 0;
+
+      // Two Pair: is not possible
+      //this.frequency[TWOPAIR] = 0;
+
+      // Three of a Kind: is not possible
+      //this.frequency[THREEOFAKIND] = 0;
+
+
+      // Straight: is a lower rank
+      //this.frequency[STRAIGHT] = 0;
+
+      if (this.isStraightDraw()) {
+        this.frequency[STRAIGHTFLUSH] = 1;
+      }
+
+      // Flush: all remaining cards are allowed
+      this.frequency[FLUSH] = 46 - this.frequency[STRAIGHTFLUSH];
+
+      // Full house: is not possible
+      //this.frequency[FULLHOUSE] = 0;
+
+      // Four of a Kind: is not possible
+      //this.frequency[FOUROFAKIND] = 0;
+
       this.frequency[ROYALFLUSH] = 0;
       break;
     case FULLHOUSE:
