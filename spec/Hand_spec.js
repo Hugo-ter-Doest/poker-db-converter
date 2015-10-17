@@ -289,5 +289,110 @@ describe('Hand', function() {
     console.log(hand.prettyPrint());
   });
 
+  // 6 card hands
+  it('should analyse poker hands correctly - High card - Straight draw', function() {
+    var card1 = new Card('Clubs', '2', false);
+    var card2 = new Card('Spades', 'Jack', false);
+    var card3 = new Card('Clubs', '5', false);
+    var card4 = new Card('Hearts', '10', true);
+    var card5 = new Card('Hearts', 'Queen', true);
+    var card6 = new Card('Hearts', 'King', true);
+    var hand = new Hand.Hand([card1, card2, card3, card4, card5, card6]);
+    var handRank = hand.calculateHandRank();
+    expect(handRank).toEqual(Hand.HIGHCARD);
+    hand.turnProbabilities();
+    console.log(hand.prettyPrint());
+  });
+
+  it('should analyse poker hands correctly - High card - Straight draw with' +
+    ' a hole in the middle', function() {
+    var card1 = new Card('Clubs', '2', false);
+    var card2 = new Card('Spades', 'Jack', false);
+    var card3 = new Card('Clubs', '5', false);
+    var card4 = new Card('Hearts', '10', true);
+    var card5 = new Card('Hearts', 'King', true);
+    var card6 = new Card('Hearts', 'Ace', true);
+    var hand = new Hand.Hand([card1, card2, card3, card4, card5, card6]);
+    var handRank = hand.calculateHandRank();
+    expect(handRank).toEqual(Hand.HIGHCARD);
+    hand.turnProbabilities();
+    console.log(hand.prettyPrint());
+  });
+
+  it('should analyse poker hands correctly - High card - Straight draw with' +
+    ' a hole in the middle and an Ace as lowest card', function() {
+    var card1 = new Card('Clubs', '2', false);
+    var card2 = new Card('Spades', '3', false);
+    var card3 = new Card('Clubs', '5', false);
+    var card4 = new Card('Hearts', '10', true);
+    var card5 = new Card('Hearts', 'King', true);
+    var card6 = new Card('Hearts', 'Ace', true);
+    var hand = new Hand.Hand([card1, card2, card3, card4, card5, card6]);
+    var handRank = hand.calculateHandRank();
+    expect(handRank).toEqual(Hand.HIGHCARD);
+    hand.turnProbabilities();
+    console.log(hand.prettyPrint());
+  });
+
+  it('should analyse poker hands correctly - High card - Straight draw with' +
+    ' consecutive cards and an Ace as lowest card', function() {
+    var card1 = new Card('Clubs', '2', false);
+    var card2 = new Card('Spades', '3', false);
+    var card3 = new Card('Clubs', '4', false);
+    var card4 = new Card('Hearts', '10', true);
+    var card5 = new Card('Hearts', 'King', true);
+    var card6 = new Card('Hearts', 'Ace', true);
+    var hand = new Hand.Hand([card1, card2, card3, card4, card5, card6]);
+    var handRank = hand.calculateHandRank();
+    expect(handRank).toEqual(Hand.HIGHCARD);
+    hand.turnProbabilities();
+    console.log(hand.prettyPrint());
+  });
+
+  it('should analyse poker hands correctly - High card - Straight draw with' +
+    ' Ace as highest card', function() {
+    var card1 = new Card('Clubs', '2', false);
+    var card2 = new Card('Spades', '3', false);
+    var card3 = new Card('Clubs', 'Jack', false);
+    var card4 = new Card('Hearts', 'Queen', true);
+    var card5 = new Card('Hearts', 'King', true);
+    var card6 = new Card('Hearts', 'Ace', true);
+    var hand = new Hand.Hand([card1, card2, card3, card4, card5, card6]);
+    var handRank = hand.calculateHandRank();
+    expect(handRank).toEqual(Hand.HIGHCARD);
+    hand.turnProbabilities();
+    console.log(hand.prettyPrint());
+  });
+
+  it('should analyse poker hands correctly - High card - Flush draw', function() {
+    var card1 = new Card('Clubs', '2', false);
+    var card2 = new Card('Spades', '3', false);
+    var card3 = new Card('Hearts', 'Jack', false);
+    var card4 = new Card('Hearts', '7', true);
+    var card5 = new Card('Hearts', 'King', true);
+    var card6 = new Card('Hearts', 'Ace', true);
+    var hand = new Hand.Hand([card1, card2, card3, card4, card5, card6]);
+    var handRank = hand.calculateHandRank();
+    expect(handRank).toEqual(Hand.HIGHCARD);
+    hand.turnProbabilities();
+    console.log(hand.prettyPrint());
+  });
+
+  it('should analyse poker hands correctly - High card - Straight Flush draw', function() {
+    var card1 = new Card('Clubs', '2', false);
+    var card2 = new Card('Spades', '3', false);
+    var card3 = new Card('Hearts', 'Jack', false);
+    var card4 = new Card('Hearts', 'Queen', true);
+    var card5 = new Card('Hearts', 'King', true);
+    var card6 = new Card('Hearts', 'Ace', true);
+    var hand = new Hand.Hand([card1, card2, card3, card4, card5, card6]);
+    var handRank = hand.calculateHandRank();
+    expect(handRank).toEqual(Hand.HIGHCARD);
+    hand.turnProbabilities();
+    console.log(hand.prettyPrint());
+  });
+
+
+
 });
 

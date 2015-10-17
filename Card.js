@@ -22,6 +22,7 @@ var TWO = 0;
 var THREE = 1;
 var FOUR = 2;
 var FIVE = 3;
+var SIX = 4;
 var NINE= 7;
 var TEN = 8;
 var JACK = 9;
@@ -46,6 +47,7 @@ module.exports = {
   THREE: THREE,
   FOUR: FOUR,
   FIVE: FIVE,
+  SIX: SIX,
   NINE: NINE,
   TEN: TEN,
   JACK: JACK,
