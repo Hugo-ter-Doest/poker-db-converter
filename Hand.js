@@ -654,71 +654,11 @@ Hand.prototype.preflopProbabilities = function() {
   }
 };
 
-// Precondition: cards are ordered, Ace is highest card, 5 or 6 cards
-// Postcondition: returns the number of outs
-Hand.prototype.nrOutsForStraight = function() {
-  var n = this.cards.length;
-  var distance = [];
-  for  (var i = 0;i < n - 1; i++) {
-    distance[i] = (this.cards[i + 1].rank - this.cards[i].rank - 1);
-  }
-
-  // Check if we have four cards with sum of distance <= 1
-  // Check possible sets of consecutive sets of four cards
-  for (var start = 0; start < (n === 5 ? 2 : 3 ); start++) {
-    var sumDistance = 0;
-    for (var i = start; i < start + 3; i++) {
-      sumDistance += distance[i];
-    }
-    console.log('sumDistance: ' + sumDistance);
-    if (sumDistance === 1) {
-      return 4;
-    }
-    else {
-      if (sumDistance === 0) {
-        if (this.cards[n - 1].rank === Card.ACE) {
-          return 4;
-        }
-        else {
-          return 8;
-        }
-      }
-    }
-  }
-
-  // We did not find a Straight draw yet -> check if we have an Ace and try
-  // to put it at the beginning
-  if (this.cards[n - 1].rank === Card.ACE) {
-    console.log('Try with Ace as lowest card');
-    var nrHolesAsLowestCard = this.cards[0].rank;
-    var nrHolesAsHighestCard = distance[n - 2];
-    if (nrHolesAsLowestCard <= nrHolesAsHighestCard) {
-      var sumDistance = this.cards[0].rank;
-      for (var i = 0; i < 2; i++) {
-        sumDistance += distance[i];
-      }
-      console.log('sumDistance: ' + sumDistance);
-
-      if (sumDistance === 1) {
-        return 4;
-      }
-      else {
-        if (sumDistance === 0) {
-          // Can only be followed by a 5
-          return 4;
-        }
-      }
-    }
-  }
-  // This is not a Straight draw
-  return 0;
-};
-
-Hand.prototype.nrOutsForStraightBV = function() {
+Hand.prototype.nrOutsForStraight = function(cards) {
   // Create a histogram
   var histogram = {};
   // Check for equal ranks
-  this.cards.forEach(function(c) {
+  cards.forEach(function(c) {
     if (!histogram[c.rank]) {
       histogram[c.rank] = 1;
     }
@@ -728,7 +668,7 @@ Hand.prototype.nrOutsForStraightBV = function() {
   });
 
   // Straight masks
-  var masks = ['011110', '01111', '11110', '10111', '11011', '11101'];
+  var masks = ['01111', '11110', '10111', '11011', '11101'];
   var nrOuts = [8, 4, 4, 4, 4, 4];
   // Create a bit vector from the hand
   var vector = '';
@@ -771,10 +711,10 @@ Hand.prototype.nrOutsForStraightBV = function() {
 // Precondition: the hand is ordered, Ace is highest card, hand rank is High
 // Card
 // Returns true if the hand is a Flush draw
-Hand.prototype.isFlushDraw = function() {
+Hand.prototype.isFlushDraw = function(cards) {
   this.nrCardsPerSuite = [];
   var that = this;
-  this.cards.forEach(function(card) {
+  cards.forEach(function(card) {
     if (that.nrCardsPerSuite[card.suite]) {
       that.nrCardsPerSuite[card.suite]++;
     }
@@ -797,8 +737,8 @@ Hand.prototype.flopProbabilities = function() {
   this.totalCombinations = C(47, 1);
   switch (this.rank) {
     case HIGHCARD:
-      var isFlushDraw = this.isFlushDraw();
-      var isStraightDraw = this.nrOutsForStraight();
+      var isFlushDraw = this.isFlushDraw(this.cards);
+      var isStraightDraw = this.nrOutsForStraight(this.cards);
 
       // If the hand is both a Flush draw and a Straight draw then it is a
       // Straight Flush draw -> one possible card
@@ -846,8 +786,8 @@ Hand.prototype.flopProbabilities = function() {
         this.frequency[STRAIGHTFLUSH];
       break;
     case PAIR:
-      var isFlushDraw = this.isFlushDraw();
-      var isStraightDraw = this.nrOutsForStraight();
+      var isFlushDraw = this.isFlushDraw(this.cards);
+      var isStraightDraw = this.nrOutsForStraight(this.cards);
 
       // If the hand is both a Flush draw and a Straight draw then it is a
       // Straight Flush draw -> one possible card
@@ -942,7 +882,7 @@ Hand.prototype.flopProbabilities = function() {
 
       break;
     case STRAIGHT:
-      var isFlushDraw = this.isFlushDraw();
+      var isFlushDraw = this.isFlushDraw(this.cards);
 
       // Straight Flush: if it is a Flush draw then one card of the Straight
       // must be replaced with the right suite
@@ -970,7 +910,7 @@ Hand.prototype.flopProbabilities = function() {
     case FLUSH:
       // Straight Flush: if it is a Straight draw, we have an out for
       // Straight Flush
-      if (this.nrOutsForStraight()) {
+      if (this.nrOutsForStraight(this.cards)) {
         this.frequency[STRAIGHTFLUSH] = 1;
       }
       // Flush: all possible cards minus possibility of a Straight Flush
@@ -1026,6 +966,33 @@ Hand.prototype.higherStraightIsPossible = function() {
   return (!isHighestStraight);
 };
 
+Hand.prototype.checkStraightAndOrFlush = function() {
+  var nrOutsForStraight = 0;
+  var isFlushDraw = false;
+  var isStraighFlushDraw = false;
+  var cards;
+  for (var i = 0; i < 6; i++) {
+    cards = this.cards.slice();
+    cards.splice(i, 1);
+    nrOutsForStraight += this.nrOutsForStraight(cards);
+    isFlushDraw = isFlushDraw || this.isFlushDraw(cards);
+    if (nrOutsForStraight && isFlushDraw) {
+      isStraightFlushDraw = true;
+    }
+  }
+
+  if (isStraighFlushDraw) {
+    this.frequency[STRAIGHTFLUSH] = 1;
+  }
+
+  this.frequency[STRAIGHT] = nrOutsForStraight - this.frequency[STRAIGHTFLUSH];
+
+  if (isFlushDraw) {
+    // One suite of which 13-4 ranks are left
+    this.frequency[FLUSH] = 9 - this.frequency[STRAIGHTFLUSH];
+  }
+};
+
 // Calculates the probabilities of new hands at the turn
 Hand.prototype.turnProbabilities = function() {
   this.initFrequencies();
@@ -1042,26 +1009,13 @@ Hand.prototype.turnProbabilities = function() {
       // Three of a Kind: is not possible
       this.frequency[THREEOFAKIND] = 0;
 
-      var nrOutsForStraight= this.nrOutsForStraightBV();
-      var isFlushDraw = this.isFlushDraw();
-
-      if (isFlushDraw && (nrOutsForStraight > 0)) {
-        this.frequency[STRAIGHTFLUSH] = 1;
-      }
-
-      this.frequency[STRAIGHT] = nrOutsForStraight - this.frequency[STRAIGHTFLUSH];
-
-      if (isFlushDraw) {
-        // One suite of which 13-4 ranks are left
-        this.frequency[FLUSH] = 9 - this.frequency[STRAIGHTFLUSH];
-      }
+      this.checkStraightAndOrFlush();
 
       // Full House: is not possible
       //this.frequency[FULLHOUSE] = 0;
 
       // Four of a Kind: is not possible
       //this.frequency[FOUROFAKIND] = 0;
-
 
       this.frequency[ROYALFLUSH] = 0;
 
@@ -1086,16 +1040,7 @@ Hand.prototype.turnProbabilities = function() {
       // Three of a Kind: match the pair
       this.frequency[THREEOFAKIND] = 2;
 
-      var nrOutsForStraight = this.nrOutsForStraightBV();
-      var isFlushDraw = this.isFlushDraw();
-
-      if (nrOutsForStraight) {
-        this.frequency[STRAIGHT] = 4;
-      }
-
-      if (isFlushDraw) {
-        this.frequency[FLUSH] = 9;
-      }
+      this.checkStraightAndOrFlush();
 
       // Full House: is not possible
       //this.frequency[FULLHOUSE] = 0;
@@ -1103,9 +1048,6 @@ Hand.prototype.turnProbabilities = function() {
       // Four of a Kind: is not possible
       //this.frequency[FOUROFAKIND] = 0;
 
-      if (nrOutsForStraight && isFlushDraw) {
-        this.frequency[STRAIGHTFLUSH] = 1;
-      }
 
       this.frequency[ROYALFLUSH] = 0;
       break;
@@ -1123,17 +1065,7 @@ Hand.prototype.turnProbabilities = function() {
       // Three of a Kind: not possible as this would imply a Full House
       //this.frequency[THREEOFAKIND] = 0;
 
-      var isStraightDraw = this.nrOutsForStraight();
-      var isFlushDraw = this.isFlushDraw();
-
-      // Straight: one more rank may result in a straight
-      if (isStraightDraw) {
-        this.frequency[STRAIGHT] = 4;
-      }
-
-      if (isFlushDraw) {
-        this.frequency[FLUSH] = 9;
-      }
+      this.checkStraightAndOrFlush();
 
       // Full House: match one of the pairs
       this.frequency[FULLHOUSE] = 2 * 2;
@@ -1141,9 +1073,6 @@ Hand.prototype.turnProbabilities = function() {
       // Four of a Kind: is not possible
       //this.frequency[FOUROFAKIND] = 0;
 
-      if (isStraightDraw && isFlushDraw) {
-        this.frequency[STRAIGHTFLUSH] = 1;
-      }
 
       this.frequency[ROYALFLUSH] = 0;
       break;
@@ -1161,21 +1090,7 @@ Hand.prototype.turnProbabilities = function() {
       // Three of a Kind: should not match any of the 4 ranks used in the hand
       this.frequency[THREEOFAKIND] = 46 - 1 - 3 * 3;
 
-      var isStraightDraw = this.nrOutsForStraight();
-      var isFlushDraw = this.isFlushDraw();
-
-      // Straight: may be a Straight Draw
-      if (isStraightDraw) {
-        this.frequency[STRAIGHT] = 4;
-      }
-
-      if (isFlushDraw) {
-        this.frequency[FLUSH] = 9;
-      }
-
-      if (isFlushDraw && isStraightDraw) {
-        this.frequency[STRAIGHTFLUSH] = 1;
-      }
+      this.checkStraightAndOrFlush();
 
       // Full House: match one of the single ranks in the hand
       this.frequency[FULLHOUSE] = 3 * 3;
