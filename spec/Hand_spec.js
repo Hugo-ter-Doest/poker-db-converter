@@ -26,7 +26,7 @@ describe('Hand', function() {
     var card1 = new Card('Clubs', '2', true);
     var card2 = new Card('Spades', '2', true);
     var hand = new Hand.Hand([card1, card2]);
-    var handRank = hand.calculateHandRank();
+    var handRank = hand.analyseHand();
     expect(handRank).toEqual(Hand.PAIR);
   });
 
@@ -34,9 +34,8 @@ describe('Hand', function() {
     var card1 = new Card('Clubs', '6', true);
     var card2 = new Card('Spades', '8', true);
     var hand = new Hand.Hand([card1, card2]);
-    var handRank = hand.calculateHandRank();
+    var handRank = hand.analyseHand();
     expect(handRank).toEqual(Hand.HIGHCARD);
-    hand.preflopProbabilities();
     console.log(hand.prettyPrint());
   });
 
@@ -44,9 +43,8 @@ describe('Hand', function() {
     var card1 = new Card('Clubs', '2', true);
     var card2 = new Card('Clubs', '6', true);
     var hand = new Hand.Hand([card1, card2]);
-    var handRank = hand.calculateHandRank();
+    var handRank = hand.analyseHand();
     expect(handRank).toEqual(Hand.SUITEDCARDS);
-    hand.preflopProbabilities();
     console.log(hand.prettyPrint());
   });
 
@@ -54,9 +52,8 @@ describe('Hand', function() {
     var card1 = new Card('Clubs', '2', true);
     var card2 = new Card('Spades', '3', true);
     var hand = new Hand.Hand([card1, card2]);
-    var handRank = hand.calculateHandRank();
+    var handRank = hand.analyseHand();
     expect(handRank).toEqual(Hand.CONNECTEDCARDS);
-    hand.preflopProbabilities();
     console.log(hand.prettyPrint());
   });
 
@@ -64,7 +61,7 @@ describe('Hand', function() {
     var card1 = new Card('Clubs', '2', true);
     var card2 = new Card('Spades', '3', true);
     var hand = new Hand.Hand([card1, card2]);
-    var handRank = hand.calculateHandRank();
+    var handRank = hand.analyseHand();
     expect(handRank).toEqual(Hand.CONNECTEDCARDS);
   });
 
@@ -73,7 +70,7 @@ describe('Hand', function() {
     var card1 = new Card('Clubs', 'Ace', true);
     var card2 = new Card('Spades', '2', true);
     var hand = new Hand.Hand([card1, card2]);
-    var handRank = hand.calculateHandRank();
+    var handRank = hand.analyseHand();
     expect(handRank).toEqual(Hand.CONNECTEDCARDS);
   });
 
@@ -82,9 +79,8 @@ describe('Hand', function() {
     var card1 = new Card('Clubs', '2', true);
     var card2 = new Card('Clubs', '3', true);
     var hand = new Hand.Hand([card1, card2]);
-    var handRank = hand.calculateHandRank();
+    var handRank = hand.analyseHand();
     expect(handRank).toEqual(Hand.CONNECTEDANDSUITED);
-    hand.preflopProbabilities();
     console.log(hand.prettyPrint());
   });
 
@@ -96,9 +92,8 @@ describe('Hand', function() {
     var card4 = new Card('Hearts', '10', true);
     var card5 = new Card('Hearts', 'Queen', true);
     var hand = new Hand.Hand([card1, card2, card3, card4, card5]);
-    var handRank = hand.calculateHandRank();
+    var handRank = hand.analyseHand();
     expect(handRank).toEqual(Hand.HIGHCARD);
-    hand.flopProbabilities();
     console.log(hand.prettyPrint());
   });
 
@@ -109,9 +104,8 @@ describe('Hand', function() {
     var card4 = new Card('Hearts', '6', true);
     var card5 = new Card('Hearts', 'Queen', true);
     var hand = new Hand.Hand([card1, card2, card3, card4, card5]);
-    var handRank = hand.calculateHandRank();
+    var handRank = hand.analyseHand();
     expect(handRank).toEqual(Hand.HIGHCARD);
-    hand.flopProbabilities();
     console.log(hand.prettyPrint());
   });
 
@@ -123,9 +117,8 @@ describe('Hand', function() {
     var card4 = new Card('Clubs', '5', false);
     var card5 = new Card('Clubs', '6', true);
     var hand = new Hand.Hand([card1, card2, card3, card4, card5]);
-    var handRank = hand.calculateHandRank();
+    var handRank = hand.analyseHand();
     expect(handRank).toEqual(Hand.HIGHCARD);
-    hand.flopProbabilities();
     console.log(hand.prettyPrint());
   });
 
@@ -136,9 +129,8 @@ describe('Hand', function() {
     var card4 = new Card('Hearts', '10', true);
     var card5 = new Card('Hearts', 'Queen', true);
     var hand = new Hand.Hand([card1, card2, card3, card4, card5]);
-    var handRank = hand.calculateHandRank();
+    var handRank = hand.analyseHand();
     expect(handRank).toEqual(Hand.PAIR);
-    hand.flopProbabilities();
     console.log(hand.prettyPrint());
   });
 
@@ -149,9 +141,8 @@ describe('Hand', function() {
     var card4 = new Card('Hearts', '5', true);
     var card5 = new Card('Hearts', 'Queen', true);
     var hand = new Hand.Hand([card1, card2, card3, card4, card5]);
-    var handRank = hand.calculateHandRank();
+    var handRank = hand.analyseHand();
     expect(handRank).toEqual(Hand.TWOPAIR);
-    hand.flopProbabilities();
     console.log(hand.prettyPrint());
   });
 
@@ -162,9 +153,8 @@ describe('Hand', function() {
     var card4 = new Card('Clubs', '5', false);
     var card5 = new Card('Hearts', 'Queen', true);
     var hand = new Hand.Hand([card1, card2, card3, card4, card5]);
-    var handRank = hand.calculateHandRank();
+    var handRank = hand.analyseHand();
     expect(handRank).toEqual(Hand.THREEOFAKIND);
-    hand.flopProbabilities();
     console.log(hand.prettyPrint());
   });
 
@@ -175,9 +165,8 @@ describe('Hand', function() {
     var card4 = new Card('Clubs', '4', false);
     var card5 = new Card('Hearts', '6', true);
     var hand = new Hand.Hand([card1, card2, card3, card4, card5]);
-    var handRank = hand.calculateHandRank();
+    var handRank = hand.analyseHand();
     expect(handRank).toEqual(Hand.STRAIGHT);
-    hand.flopProbabilities();
     console.log(hand.prettyPrint());
   });
 
@@ -189,9 +178,8 @@ describe('Hand', function() {
     var card4 = new Card('Clubs', '4', false);
     var card5 = new Card('Hearts', '6', true);
     var hand = new Hand.Hand([card1, card2, card3, card4, card5]);
-    var handRank = hand.calculateHandRank();
+    var handRank = hand.analyseHand();
     expect(handRank).toEqual(Hand.STRAIGHT);
-    hand.flopProbabilities();
     console.log(hand.prettyPrint());
   });
 
@@ -203,9 +191,8 @@ describe('Hand', function() {
     var card4 = new Card('Clubs', '5', false);
     var card5 = new Card('Hearts', '2', true);
     var hand = new Hand.Hand([card1, card2, card3, card4, card5]);
-    var handRank = hand.calculateHandRank();
+    var handRank = hand.analyseHand();
     expect(handRank).toEqual(Hand.STRAIGHT);
-    hand.flopProbabilities();
     console.log(hand.prettyPrint());
   });
 
@@ -217,9 +204,8 @@ describe('Hand', function() {
     var card4 = new Card('Clubs', '6', false);
     var card5 = new Card('Clubs', 'Queen', true);
     var hand = new Hand.Hand([card1, card2, card3, card4, card5]);
-    var handRank = hand.calculateHandRank();
+    var handRank = hand.analyseHand();
     expect(handRank).toEqual(Hand.FLUSH);
-    hand.flopProbabilities();
     console.log(hand.prettyPrint());
   });
 
@@ -230,9 +216,8 @@ describe('Hand', function() {
     var card4 = new Card('Diamonds', '3', false);
     var card5 = new Card('Spades', '3', true);
     var hand = new Hand.Hand([card1, card2, card3, card4, card5]);
-    var handRank = hand.calculateHandRank();
+    var handRank = hand.analyseHand();
     expect(handRank).toEqual(Hand.FULLHOUSE);
-    hand.flopProbabilities();
     console.log(hand.prettyPrint());
   });
 
@@ -243,9 +228,8 @@ describe('Hand', function() {
     var card4 = new Card('Spades', '2', false);
     var card5 = new Card('Spades', '3', true);
     var hand = new Hand.Hand([card1, card2, card3, card4, card5]);
-    var handRank = hand.calculateHandRank();
+    var handRank = hand.analyseHand();
     expect(handRank).toEqual(Hand.FOUROFAKIND);
-    hand.flopProbabilities();
     console.log(hand.prettyPrint());
   });
 
@@ -256,9 +240,8 @@ describe('Hand', function() {
     var card4 = new Card('Clubs', '5', false);
     var card5 = new Card('Clubs', '6', true);
     var hand = new Hand.Hand([card1, card2, card3, card4, card5]);
-    var handRank = hand.calculateHandRank();
+    var handRank = hand.analyseHand();
     expect(handRank).toEqual(Hand.STRAIGHTFLUSH);
-    hand.flopProbabilities();
     console.log(hand.prettyPrint());
   });
 
@@ -270,9 +253,8 @@ describe('Hand', function() {
     var card4 = new Card('Clubs', 'Queen', false);
     var card5 = new Card('Clubs', 'King', true);
     var hand = new Hand.Hand([card1, card2, card3, card4, card5]);
-    var handRank = hand.calculateHandRank();
+    var handRank = hand.analyseHand();
     expect(handRank).toEqual(Hand.STRAIGHTFLUSH);
-    hand.flopProbabilities();
     console.log(hand.prettyPrint());
   });
 
@@ -283,9 +265,8 @@ describe('Hand', function() {
     var card4 = new Card('Clubs', 'King', false);
     var card5 = new Card('Clubs', 'Ace', true);
     var hand = new Hand.Hand([card1, card2, card3, card4, card5]);
-    var handRank = hand.calculateHandRank();
+    var handRank = hand.analyseHand();
     expect(handRank).toEqual(Hand.ROYALFLUSH);
-    hand.flopProbabilities();
     console.log(hand.prettyPrint());
   });
 
@@ -298,9 +279,8 @@ describe('Hand', function() {
     var card5 = new Card('Hearts', 'Queen', true);
     var card6 = new Card('Hearts', 'King', true);
     var hand = new Hand.Hand([card1, card2, card3, card4, card5, card6]);
-    var handRank = hand.calculateHandRank();
+    var handRank = hand.analyseHand();
     expect(handRank).toEqual(Hand.HIGHCARD);
-    hand.turnProbabilities();
     console.log(hand.prettyPrint());
   });
 
@@ -313,9 +293,8 @@ describe('Hand', function() {
     var card5 = new Card('Hearts', 'King', true);
     var card6 = new Card('Hearts', 'Ace', true);
     var hand = new Hand.Hand([card1, card2, card3, card4, card5, card6]);
-    var handRank = hand.calculateHandRank();
+    var handRank = hand.analyseHand();
     expect(handRank).toEqual(Hand.HIGHCARD);
-    hand.turnProbabilities();
     console.log(hand.prettyPrint());
   });
 
@@ -328,9 +307,8 @@ describe('Hand', function() {
     var card5 = new Card('Hearts', 'King', true);
     var card6 = new Card('Hearts', 'Ace', true);
     var hand = new Hand.Hand([card1, card2, card3, card4, card5, card6]);
-    var handRank = hand.calculateHandRank();
+    var handRank = hand.analyseHand();
     expect(handRank).toEqual(Hand.HIGHCARD);
-    hand.turnProbabilities();
     console.log(hand.prettyPrint());
   });
 
@@ -343,9 +321,8 @@ describe('Hand', function() {
     var card5 = new Card('Hearts', 'King', true);
     var card6 = new Card('Hearts', 'Ace', true);
     var hand = new Hand.Hand([card1, card2, card3, card4, card5, card6]);
-    var handRank = hand.calculateHandRank();
+    var handRank = hand.analyseHand();
     expect(handRank).toEqual(Hand.HIGHCARD);
-    hand.turnProbabilities();
     console.log(hand.prettyPrint());
   });
 
@@ -358,9 +335,8 @@ describe('Hand', function() {
     var card5 = new Card('Hearts', 'King', true);
     var card6 = new Card('Hearts', 'Ace', true);
     var hand = new Hand.Hand([card1, card2, card3, card4, card5, card6]);
-    var handRank = hand.calculateHandRank();
+    var handRank = hand.analyseHand();
     expect(handRank).toEqual(Hand.HIGHCARD);
-    hand.turnProbabilities();
     console.log(hand.prettyPrint());
   });
 
@@ -372,9 +348,8 @@ describe('Hand', function() {
     var card5 = new Card('Hearts', 'King', true);
     var card6 = new Card('Hearts', 'Ace', true);
     var hand = new Hand.Hand([card1, card2, card3, card4, card5, card6]);
-    var handRank = hand.calculateHandRank();
+    var handRank = hand.analyseHand();
     expect(handRank).toEqual(Hand.HIGHCARD);
-    hand.turnProbabilities();
     console.log(hand.prettyPrint());
   });
 
@@ -386,13 +361,49 @@ describe('Hand', function() {
     var card5 = new Card('Hearts', 'King', true);
     var card6 = new Card('Hearts', 'Ace', true);
     var hand = new Hand.Hand([card1, card2, card3, card4, card5, card6]);
-    var handRank = hand.calculateHandRank();
+    var handRank = hand.analyseHand();
     expect(handRank).toEqual(Hand.HIGHCARD);
-    hand.turnProbabilities();
     console.log(hand.prettyPrint());
   });
 
+  it('should analyse poker hands correctly - Pair', function() {
+    var card1 = new Card('Clubs', '2', false);
+    var card2 = new Card('Spades', '2', false);
+    var card3 = new Card('Clubs', '5', false);
+    var card4 = new Card('Hearts', '10', true);
+    var card5 = new Card('Hearts', 'Queen', true);
+    var card6 = new Card('Hearts', 'Ace', false);
+    var hand = new Hand.Hand([card1, card2, card3, card4, card5, card6]);
+    var handRank = hand.analyseHand();
+    expect(handRank).toEqual(Hand.PAIR);
+    console.log(hand.prettyPrint());
+  });
 
+  it('should analyse poker hands correctly - Pair that is a Flush draw', function() {
+    var card1 = new Card('Clubs', '2', false);
+    var card2 = new Card('Spades', '2', false);
+    var card3 = new Card('Hearts', '5', false);
+    var card4 = new Card('Hearts', '10', true);
+    var card5 = new Card('Hearts', 'Queen', true);
+    var card6 = new Card('Hearts', 'Ace', false);
+    var hand = new Hand.Hand([card1, card2, card3, card4, card5, card6]);
+    var handRank = hand.analyseHand();
+    expect(handRank).toEqual(Hand.PAIR);
+    console.log(hand.prettyPrint());
+  });
+
+  it('should analyse poker hands correctly - Pair that is a Straight draw', function() {
+    var card1 = new Card('Clubs', '2', false);
+    var card2 = new Card('Spades', '2', false);
+    var card3 = new Card('Hearts', '3', false);
+    var card4 = new Card('Hearts', '4', true);
+    var card5 = new Card('Hearts', 'Queen', true);
+    var card6 = new Card('Hearts', '5', false);
+    var hand = new Hand.Hand([card1, card2, card3, card4, card5, card6]);
+    var handRank = hand.analyseHand();
+    expect(handRank).toEqual(Hand.PAIR);
+    console.log(hand.prettyPrint());
+  });
 
 });
 

@@ -697,6 +697,7 @@ Hand.prototype.nrOutsForStraight = function() {
       for (var i = 0; i < 2; i++) {
         sumDistance += distance[i];
       }
+      console.log('sumDistance: ' + sumDistance);
 
       if (sumDistance === 1) {
         return 4;
@@ -710,6 +711,60 @@ Hand.prototype.nrOutsForStraight = function() {
     }
   }
   // This is not a Straight draw
+  return 0;
+};
+
+Hand.prototype.nrOutsForStraightBV = function() {
+  // Create a histogram
+  var histogram = {};
+  // Check for equal ranks
+  this.cards.forEach(function(c) {
+    if (!histogram[c.rank]) {
+      histogram[c.rank] = 1;
+    }
+    else {
+      histogram[c.rank]++;
+    }
+  });
+
+  // Straight masks
+  var masks = ['011110', '01111', '11110', '10111', '11011', '11101'];
+  var nrOuts = [8, 4, 4, 4, 4, 4];
+  // Create a bit vector from the hand
+  var vector = '';
+  for (var i = 0; i < 13; i++) {
+    if (histogram[i]) {
+      vector = vector + '1';
+    }
+    else {
+      vector = vector + '0';
+    }
+  }
+  console.log('Hand vector: ' + vector);
+
+  // Check masks with Ace as highest card
+  var maskIndex = -1;
+  if (masks.some(function(m, index) {
+    if (vector.indexOf(m) > -1) {
+      maskIndex = index;
+      return(true);
+    }
+  })) {
+    return nrOuts[maskIndex];
+  }
+
+  // Check masks with Ace as lowest card
+  if (histogram[Card.ACE]) {
+    vector = '1' + vector.substr(0, vector.length - 1);
+  }
+  if (masks.some(function(m, index) {
+      if (vector.indexOf(m) > -1) {
+        maskIndex = index;
+        return(true);
+      }
+    })) {
+    return nrOuts[maskIndex];
+  }
   return 0;
 };
 
@@ -987,7 +1042,7 @@ Hand.prototype.turnProbabilities = function() {
       // Three of a Kind: is not possible
       this.frequency[THREEOFAKIND] = 0;
 
-      var nrOutsForStraight= this.nrOutsForStraight();
+      var nrOutsForStraight= this.nrOutsForStraightBV();
       var isFlushDraw = this.isFlushDraw();
 
       if (isFlushDraw && (nrOutsForStraight > 0)) {
@@ -1019,7 +1074,7 @@ Hand.prototype.turnProbabilities = function() {
       break;
 
     case PAIR:
-      // High Card: is not possible
+      // High Card: is a lower rank
       //this.frequency[HIGHCARD] = 0;
 
       // Pair: should not match any of the ranks in the hand
@@ -1031,10 +1086,10 @@ Hand.prototype.turnProbabilities = function() {
       // Three of a Kind: match the pair
       this.frequency[THREEOFAKIND] = 2;
 
-      var isStraightDraw = this.nrOutsForStraight();
+      var nrOutsForStraight = this.nrOutsForStraightBV();
       var isFlushDraw = this.isFlushDraw();
 
-      if (isStraightDraw) {
+      if (nrOutsForStraight) {
         this.frequency[STRAIGHT] = 4;
       }
 
@@ -1048,7 +1103,7 @@ Hand.prototype.turnProbabilities = function() {
       // Four of a Kind: is not possible
       //this.frequency[FOUROFAKIND] = 0;
 
-      if (isStraightDraw && isFlushDraw) {
+      if (nrOutsForStraight && isFlushDraw) {
         this.frequency[STRAIGHTFLUSH] = 1;
       }
 
@@ -1316,88 +1371,25 @@ Hand.prototype.turnProbabilities = function() {
   }
 };
 
-Hand.prototype.isFlush = function() {
-  // Count number of cards per Suite
-  var that = this;
-  this.cards.forEach(function(card) {
-    if (!that.suites[card.suite]) {
-      that.suites[card.suite] = 1;
-    }
-    else {
-      that.suites[card.suite]++;
-    }
-  });
-  // Check if the hand has 5 cards of one suite
-  return(
-    Object.keys(this.suites).some(function(suite) {
-      if (that.suites[suite] === 5) {
-        that.flushSuite = suite;
-        return (true);
-      }
-      else {
-        return(false);
-      }
-    })
-  );
-};
+Hand.prototype.isFlush = function(cards) {
+  var startSuite = cards[0].suite;
+  var isFlush = true;
 
-// Look for a Straight from the highest ranked card down
-Hand.prototype.isStraight = function() {
-  for (var rank = Card.ACE; rank >= Card.SIX; rank--) {
-    var isStraight = true;
-    for (var i = 0; i <= 4; i++) {
-      isStraight = isStraight && this.ranksInHand[rank - i];
-    }
-    if (isStraight) {
-      console.log('Straight found!');
-      return (true);
-    }
+  for (var i = 1; i < cards.length; i++) {
+    isFlush = isFlush && (cards[i].suite === startSuite);
   }
-  // Check for a Straight starting with Ace as 1
-  return(this.ranksInHand[Card.ACE] &&
-    this.ranksInHand[Card.TWO] &&
-    this.ranksInHand[Card.THREE] &&
-    this.ranksInHand[Card.FOUR] &&
-    this.ranksInHand[Card.FIVE]);
+  return(isFlush);
 };
 
-// Precondition: hand is a Straight flush
-Hand.prototype.isRoyalFlush = function() {
-  var that = this;
-  return(this.cards.some(function(c) {
-    return((c.rank === Card.ACE) && (c.suite == that.flushSuite));
-  }));
-};
+Hand.prototype.isStraight = function(cards) {
+  var isStraight = false;
 
-// Admin for double, triple, quadruple ranks
-Hand.prototype.ranksInHand= function() {
-  this.ranksInHand = {};
-  // Check for equal ranks
-  var that = this;
-  this.cards.forEach(function(c) {
-    if (!that.ranksInHand[c.rank]) {
-      that.ranksInHand[c.rank] = 1;
-    }
-    else {
-      that.ranksInHand[c.rank]++;
-    }
-  });
-};
-
-// Checks for x of a kind (pair, three of a kind, four of a kind)
-Hand.prototype.xOfAKind = function() {
-  var that = this;
-  Object.keys(this.ranksInHand).forEach(function(rank) {
-    if (that.ranksInHand[rank] === 4) {
-      that.hasFourOfAKind = true;
-    }
-    if (that.ranksInHand[rank] === 2) {
-      that.numberOfPairs++;
-    }
-    if (that.ranksInHand[rank] === 3) {
-      that.hasThreeOfAKind = true;
-    }
-  });
+  isStraight = ((cards[4].rank - cards[0].rank) === 4);
+  if (cards[4].rank === Card.ACE) {
+    isStraight = isStraight ||
+      ((cards[3].rank - cards[0].rank) === 3);
+  }
+  return(isStraight);
 };
 
 Hand.prototype.twoCardSuited = function() {
@@ -1413,70 +1405,103 @@ Hand.prototype.twoCardConnected = function() {
   );
 };
 
-// Calculates hand rank based on known cards
-Hand.prototype.calculateHandRank = function() {
+
+// Based on
+// http://nsayer.blogspot.nl/2007/07/algorithm-for-evaluating-poker-hands.html
+Hand.prototype.calculateHandRank5 = function(cards) {
+  // Sort the cards by rank in ascending order
+  cards.sort(function(a, b) {
+    return a.rank - b.rank;
+  });
+
+  // Create a histogram
+  var histogram = {};
+  // Check for equal ranks
+  cards.forEach(function(c) {
+    if (!histogram[c.rank]) {
+      histogram[c.rank] = 1;
+    }
+    else {
+      histogram[c.rank]++;
+    }
+  });
+
+  // Check for n of a Kind
+  var hasFourOfAKind = false;
+  var numberOfPairs = 0;
+  var hasThreeOfAKind = false;
+  Object.keys(histogram).forEach(function(rank) {
+    if (histogram[rank] === 4) {
+      hasFourOfAKind = true;
+    }
+    if (histogram[rank] === 2) {
+      numberOfPairs++;
+    }
+    if (histogram[rank] === 3) {
+      hasThreeOfAKind = true;
+    }
+  });
+
+  var isFlush = this.isFlush(cards);
+  var isStraight = this.isStraight(cards);
+
+  if (hasFourOfAKind) {
+    return FOUROFAKIND;
+  }
+  else {
+    if (hasThreeOfAKind && numberOfPairs) {
+      return FULLHOUSE;
+    }
+    else {
+      if (hasThreeOfAKind) {
+        return THREEOFAKIND;
+      }
+      else {
+        if (numberOfPairs > 1) {
+          return TWOPAIR;
+        }
+        else {
+          if (numberOfPairs) {
+            return PAIR;
+          }
+          else {
+            if (isFlush) {
+              if (isStraight) {
+                if (cards[4].rank === Card.ACE) {
+                  return ROYALFLUSH;
+                }
+                else {
+                  return STRAIGHTFLUSH;
+                }
+              }
+              else {
+                return FLUSH
+              }
+            }
+            else {
+              if (isStraight) {
+                return STRAIGHT;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return(HIGHCARD);
+};
+
+Hand.prototype.calculateHandRank2 = function() {
   // Sort the cards by rank in ascending order
   this.cards.sort(function(a, b) {
     return a.rank - b.rank;
   });
-  this.ranksInHand();
-  this.xOfAKind();
-
-  var isFlush = this.isFlush();
-  var isStraight = this.isStraight();
-
-  if (isFlush && isStraight) {
-    if (this.isRoyalFlush()) {
-      this.rank = ROYALFLUSH;
-    }
-    else {
-      this.rank = STRAIGHTFLUSH;
-    }
+  this.rank = HIGHCARD;
+  if (this.cards[0].rank === this.cards[1].rank) {
+    this.rank = PAIR;
   }
   else {
-    if (isFlush) {
-      this.rank = FLUSH;
-    }
-    else {
-      if (isStraight) {
-        this.rank = STRAIGHT;
-      }
-      else {
-        if (this.hasFourOfAKind) {
-          this.rank = FOUROFAKIND;
-        }
-        else {
-          // Is this a Full house?
-          if (this.hasThreeOfAKind && this.numberOfPairs) {
-            this.rank = FULLHOUSE;
-          }
-          else {
-            // Is this a Three of a kind?
-            if (this.hasThreeOfAKind) {
-              this.rank = THREEOFAKIND;
-            }
-            else {
-              // Is this a Two pair?
-              if (this.numberOfPairs > 1) {
-                this.rank = TWOPAIR;
-              }
-              else {
-                // Is this a Pair?
-                if (this.numberOfPairs) {
-                  this.rank = PAIR;
-                }
-                else {
-                  // This is a High card
-                  this.rank = HIGHCARD;
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-  if ((this.cards.length === 2) && (this.rank !== PAIR)) {
     // Narrow down pocket cards
     var twoCardSuited = this.twoCardSuited();
     var twoCardConnected = this.twoCardConnected();
@@ -1491,35 +1516,67 @@ Hand.prototype.calculateHandRank = function() {
         if (twoCardConnected) {
           this.rank = CONNECTEDCARDS;
         }
-        else {
-          // this.rank = HIGHCARD;
-        }
       }
     }
   }
+};
+
+Hand.prototype.calculateHandRank = function() {
   switch (this.cards.length) {
     case 2:
+      this.calculateHandRank2();
+      break;
+    case 5:
+      this.rank = this.calculateHandRank5(this.cards);
+      break;
+    case 6:
+      var ranks = [];
+      // Take out one a card and process 5 card hand
+      for (var i = 0; i < this.cards.length; i++) {
+        var cards = this.cards.slice();
+        cards.splice(i, 1);
+        ranks.push(this.calculateHandRank5(cards));
+      }
+      this.rank = Math.max.apply(Math, ranks);
+      break;
+    case 7:
+      // Take out two cards and process 5 card hand
+      var ranks = [];
+      for (var i = 0; i < this.cards.length; i++) {
+        for (var j = i + 1; j < this.cards.length; j++) {
+          var cards = this.cards.slice();
+          cards.splice(i, 1);
+          cards.splice(j - 1, 1);
+          ranks.push(this.calculateHandRank5(cards));
+        }
+      }
+      this.rank = Math.max.apply(Math, ranks);
+      break;
+  }
+};
+
+// Analyses the hand: rank, a priori probability and conditonal
+// probabilities for the next round
+// Returns the hand rank
+Hand.prototype.analyseHand = function() {
+  this.calculateHandRank();
+  switch(this.cards.length) {
+    case 2:
       this.twoCardHandProb();
+      this.preflopProbabilities();
       break;
     case 5:
       this.fiveCardHandProb();
+      this.flopProbabilities();
       break;
     case 6:
       this.sixCardHandProb();
+      this.turnProbabilities();
       break;
     case 7:
       this.sevenCardHandProb();
       break;
   }
-  console.log('Number of cards: ' + this.cards.length);
-  if (this.cards.length > 2) {
-    console.log('Rank: ' + handRankNames[this.rank]);
-  }
-  else {
-    console.log('Rank: ' + pocketRankNames[this.rank]);
-  }
-  var p = 100 * this.rankProbability;
-  console.log('Rank probability: ' + p.toFixed(4) + '%');
   return(this.rank);
 };
 
@@ -1531,6 +1588,8 @@ function spaces(n) {
   return str;
 }
 
+// Pretty prints the analysis of the hand
+// Returns a string
 Hand.prototype.prettyPrint = function() {
   var str = '';
   str += '===================================\n';
