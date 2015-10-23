@@ -16,394 +16,130 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-var Card = require('../Card').Card;
 var Hand = require('../Hand');
 
+var testCases = [
+  // Pocket cards
+  ['Pair',
+    ['C2', 'S2'], Hand.PAIR],
+  ['High Card',
+    ['C6', 'S8'], Hand.HIGHCARD],
+  ['Suited Cards',
+    ['C2', 'C6'], Hand.SUITEDCARDS],
+  ['Connected Cards',
+    ['C2', 'S3'], Hand.CONNECTEDCARDS],
+  ['Connected Cards',
+    ['CA', 'S2'], Hand.CONNECTEDCARDS],
+  ['Connected and Suited Cards',
+    ['C2', 'C3'], Hand.CONNECTEDANDSUITED],
+  ['Connected and Suited Cards',
+    ['C2', 'C3'], Hand.CONNECTEDANDSUITED],
+
+  // Five card hands
+  ['High Card',
+    ['C2', 'SJ', 'C5', 'HT', 'HQ'], Hand.HIGHCARD,       Hand.PAIR, 15],
+  ['High Card that is a Straight draw',
+    ['C2', 'S3', 'C5', 'H6', 'HQ'], Hand.HIGHCARD,       Hand.STRAIGHT, 4],
+  ['High Card that is a Straight Flush draw',
+    ['C2', 'C3', 'HQ', 'C5', 'C6'], Hand.HIGHCARD,       Hand.STRAIGHTFLUSH, 1],
+  ['Pair',
+    ['C2', 'S2', 'C5', 'HT', 'HQ'], Hand.PAIR,           Hand.THREEOFAKIND, 2],
+  ['Two Pair',
+    ['C2', 'S2', 'C5', 'H5', 'HQ'], Hand.TWOPAIR,        Hand.FULLHOUSE, 4],
+  ['Three of a Kind',
+    ['C2', 'S2', 'H2', 'C5', 'HQ'], Hand.THREEOFAKIND,   Hand.FULLHOUSE, 6],
+  ['Straight',
+    ['C2', 'S3', 'H5', 'C4', 'H6'], Hand.STRAIGHT,       Hand.STRAIGHT, 47],
+  ['Straight that is a Straigh Flush draw',
+    ['C2', 'C3', 'C5', 'C4', 'H6'], Hand.STRAIGHT,       Hand.STRAIGHTFLUSH, 1],
+  ['Straight',
+    ['CA', 'S3', 'H4', 'C5', 'H2'], Hand.STRAIGHT,       Hand.STRAIGHT, 47],
+  ['Flush that is a Straight Flush draw',
+    ['C2', 'C3', 'C5', 'C6', 'CQ'], Hand.FLUSH,          Hand.STRAIGHTFLUSH, 1],
+  ['Full of a House',
+    ['C2', 'D2', 'C3', 'D3', 'S3'], Hand.FULLHOUSE,      Hand.FOUROFAKIND, 1],
+  ['Four of a Kind',
+    ['C2', 'D2', 'H2', 'S2', 'S3'], Hand.FOUROFAKIND,    Hand.FOUROFAKIND, 47],
+  ['Straight Flush that is a Royal Flush draw',
+    ['C9', 'CT', 'CJ', 'CQ', 'CK'], Hand.STRAIGHTFLUSH,  Hand.ROYALFLUSH, 1],
+  ['Royal Flush',
+    ['CT', 'CJ', 'CQ', 'CK', 'CA'], Hand.ROYALFLUSH,     Hand.ROYALFLUSH, 47],
+
+  // Six card hands
+  ['High Card that is a Straight draw pattern 011110',
+    ['C2', 'SJ', 'C5', 'HT', 'HQ', 'HK'], Hand.HIGHCARD,     Hand.STRAIGHT, 8],
+  ['High Card that is a Straight draw pattern 011110',
+    ['C2', 'S3', 'C5', 'H6', 'H7', 'H8'], Hand.HIGHCARD,     Hand.STRAIGHT, 8],
+  ['High Card that is a Straight draw with pattern 11011',
+    ['C2', 'SJ', 'C5', 'HT', 'HK', 'HA'], Hand.HIGHCARD,     Hand.STRAIGHT, 4],
+  ['High Card that is a Straight draw with a hole in the middle and an Ace' +
+  ' as lowest card',
+    ['C2', 'S3', 'C5', 'HT', 'HK', 'HA'], Hand.HIGHCARD,     Hand.STRAIGHT, 4],
+  ['High Card that is a Straight draw with consecutive cards and an Ace as' +
+  ' lowest card',
+    ['C2', 'S3', 'C4', 'HT', 'HK', 'HA'], Hand.HIGHCARD,     Hand.STRAIGHT, 4],
+  ['High card that is a Straight draw with Ace as highest card',
+    ['C2', 'S3', 'CJ', 'HQ', 'HK', 'HA'], Hand.HIGHCARD,     Hand.STRAIGHT, 4],
+  ['High Card that is a Flush draw',
+    ['C2', 'S3', 'HJ', 'H7', 'HK', 'HA'], Hand.HIGHCARD,     Hand.FLUSH, 9],
+  ['High card that is a Straight Flush draw',
+    ['C2', 'S3', 'HJ', 'HQ', 'HK', 'HA'], Hand.HIGHCARD,     Hand.STRAIGHTFLUSH, 1],
+  ['High card that is a Straight draw and Flush draw but not a Straight' +
+  ' Flush draw',
+    ['C2', 'H3', 'CJ', 'HQ', 'HK', 'HT'], Hand.HIGHCARD,     Hand.STRAIGHTFLUSH, 0],
+  ['High card that is a Straight draw and Flush draw but not a Straight' +
+  ' Flush draw',
+    ['C2', 'H3', 'CJ', 'HQ', 'HK', 'HT'], Hand.HIGHCARD,     Hand.FLUSH, 9],
+  ['High card that is a Straight draw and Flush draw but not a Straight' +
+  ' Flush draw',
+    ['C2', 'H3', 'CJ', 'HQ', 'HK', 'HT'], Hand.HIGHCARD,     Hand.STRAIGHT, 8],
+  ['Pair',
+    ['C2', 'S2', 'C5', 'HT', 'HQ', 'HA'], Hand.PAIR,         Hand.THREEOFAKIND, 2],
+  ['Pair',
+    ['C2', 'S2', 'C5', 'HT', 'HQ', 'HA'], Hand.PAIR,         Hand.TWOPAIR, 12],
+  ['Pair that is a Flush draw',
+    ['C2', 'S2', 'H5', 'HT', 'HQ', 'HA'], Hand.PAIR,         Hand.FLUSH, 9],
+  ['Pair that is a Flush draw',
+    ['C2', 'S2', 'H3', 'H4', 'HQ', 'H5'], Hand.PAIR,         Hand.STRAIGHT, 8],
+  ['Pair that is a Flush draw',
+    ['C2', 'S2', 'H3', 'H4', 'HQ', 'H5'], Hand.PAIR,         Hand.FLUSH, 9],
+  ['Pair that is a Flush draw',
+    ['C2', 'S2', 'H3', 'H4', 'HQ', 'H5'], Hand.PAIR,         Hand.STRAIGHTFLUSH, 0],
+  ['Pair that is a Straight Flush draw',
+    ['CQ', 'SQ', 'H3', 'H4', 'H6', 'H5'], Hand.PAIR,         Hand.STRAIGHTFLUSH, 2],
+  ['Pair that is a Straight Flush draw',
+    ['CQ', 'SQ', 'H3', 'H4', 'H6', 'H5'], Hand.PAIR,         Hand.FLUSH, 7],
+  ['Two Pair that is a Flush draw',
+    ['HQ', 'SQ', 'C3', 'H3', 'H6', 'H5'], Hand.TWOPAIR,      Hand.FLUSH, 9],
+  ['Two Pair that is a Flush draw',
+    ['HQ', 'SQ', 'C3', 'H3', 'H6', 'H5'], Hand.TWOPAIR,      Hand.FULLHOUSE, 4],
+  ['Two pair that is a Straight draw',
+    ['H2', 'S2', 'C3', 'H3', 'D4', 'H5'], Hand.TWOPAIR,      Hand.STRAIGHT, 8],
+  ['Two pair that is a Straight Flush draw',
+    ['H2', 'S2', 'C3', 'H3', 'H4', 'H5'], Hand.TWOPAIR,      Hand.STRAIGHTFLUSH, 2],
+  ['Two pair that is a Straight Flush draw',
+    ['H2', 'S2', 'C3', 'H3', 'H4', 'H5'], Hand.TWOPAIR,      Hand.FLUSH, 7],
+  ['Three of a kind that is a Straight Flush draw',
+    ['H2', 'S2', 'C2', 'H3', 'H4', 'H5'], Hand.THREEOFAKIND, Hand.STRAIGHTFLUSH, 2],
+  ['Three of a kind',
+    ['H2', 'S2', 'C2', 'H3', 'H4', 'H7'], Hand.THREEOFAKIND, Hand.FOUROFAKIND, 1],
+  ['Three of a kind that is a Flush draw',
+    ['H2', 'S2', 'C2', 'H3', 'H4', 'H7'], Hand.THREEOFAKIND, Hand.FLUSH, 9],
+];
 
 describe('Hand', function() {
-  // Pocket cards
-  it('should analyse poker hands correctly - Pocket cards - Pair', function() {
-    var card1 = new Card('Clubs', '2', true);
-    var card2 = new Card('Spades', '2', true);
-    var hand = new Hand.Hand([card1, card2]);
-    var handRank = hand.analyseHand();
-    expect(handRank).toEqual(Hand.PAIR);
+  testCases.forEach(function (testCase) {
+    it('should correctly analyse ' + testCase[0], function() {
+      var hand = new Hand.Hand(testCase[1]);
+      var expectedRank = testCase[2];
+      var handRank = hand.analyseHand();
+      console.log(hand.prettyPrint());
+      expect(handRank).toEqual(expectedRank);
+      expect(hand.sumFrequencies).toEqual(hand.totalCombinations);
+      if (testCase.length === 5) {
+        expect(hand.frequency[testCase[3]]).toEqual(testCase[4]);
+      }
+    });
   });
-
-  it('should analyse poker hands correctly - Pocket cards - High card', function() {
-    var card1 = new Card('Clubs', '6', true);
-    var card2 = new Card('Spades', '8', true);
-    var hand = new Hand.Hand([card1, card2]);
-    var handRank = hand.analyseHand();
-    expect(handRank).toEqual(Hand.HIGHCARD);
-    console.log(hand.prettyPrint());
-  });
-
-  it('should analyse poker hands correctly - Pocket cards - Suited cards', function() {
-    var card1 = new Card('Clubs', '2', true);
-    var card2 = new Card('Clubs', '6', true);
-    var hand = new Hand.Hand([card1, card2]);
-    var handRank = hand.analyseHand();
-    expect(handRank).toEqual(Hand.SUITEDCARDS);
-    console.log(hand.prettyPrint());
-  });
-
-  it('should analyse poker hands correctly - Pocket cards - Connected cards', function() {
-    var card1 = new Card('Clubs', '2', true);
-    var card2 = new Card('Spades', '3', true);
-    var hand = new Hand.Hand([card1, card2]);
-    var handRank = hand.analyseHand();
-    expect(handRank).toEqual(Hand.CONNECTEDCARDS);
-    console.log(hand.prettyPrint());
-  });
-
-  it('should analyse poker hands correctly - Pocket cards - Connected cards', function() {
-    var card1 = new Card('Clubs', '2', true);
-    var card2 = new Card('Spades', '3', true);
-    var hand = new Hand.Hand([card1, card2]);
-    var handRank = hand.analyseHand();
-    expect(handRank).toEqual(Hand.CONNECTEDCARDS);
-  });
-
-  it('should analyse poker hands correctly - Pocket cards - Connected cards' +
-    ' - with Ace and Two', function() {
-    var card1 = new Card('Clubs', 'Ace', true);
-    var card2 = new Card('Spades', '2', true);
-    var hand = new Hand.Hand([card1, card2]);
-    var handRank = hand.analyseHand();
-    expect(handRank).toEqual(Hand.CONNECTEDCARDS);
-  });
-
-  it('should analyse poker hands correctly - Pocket cards - Suited' +
-    ' connected cards', function() {
-    var card1 = new Card('Clubs', '2', true);
-    var card2 = new Card('Clubs', '3', true);
-    var hand = new Hand.Hand([card1, card2]);
-    var handRank = hand.analyseHand();
-    expect(handRank).toEqual(Hand.CONNECTEDANDSUITED);
-    console.log(hand.prettyPrint());
-  });
-
-  // 5 card hands
-  it('should analyse poker hands correctly - High card', function() {
-    var card1 = new Card('Clubs', '2', false);
-    var card2 = new Card('Spades', 'Jack', false);
-    var card3 = new Card('Clubs', '5', false);
-    var card4 = new Card('Hearts', '10', true);
-    var card5 = new Card('Hearts', 'Queen', true);
-    var hand = new Hand.Hand([card1, card2, card3, card4, card5]);
-    var handRank = hand.analyseHand();
-    expect(handRank).toEqual(Hand.HIGHCARD);
-    console.log(hand.prettyPrint());
-  });
-
-  it('should analyse poker hands correctly - High card is a Straight draw', function() {
-    var card1 = new Card('Clubs', '2', false);
-    var card2 = new Card('Spades', '3', false);
-    var card3 = new Card('Clubs', '5', false);
-    var card4 = new Card('Hearts', '6', true);
-    var card5 = new Card('Hearts', 'Queen', true);
-    var hand = new Hand.Hand([card1, card2, card3, card4, card5]);
-    var handRank = hand.analyseHand();
-    expect(handRank).toEqual(Hand.HIGHCARD);
-    console.log(hand.prettyPrint());
-  });
-
-  it('should analyse poker hands correctly - High card is a Straight' +
-    ' Flush draw', function() {
-    var card1 = new Card('Clubs', '2', false);
-    var card2 = new Card('Clubs', '3', false);
-    var card3 = new Card('Hearts', 'Queen', true);
-    var card4 = new Card('Clubs', '5', false);
-    var card5 = new Card('Clubs', '6', true);
-    var hand = new Hand.Hand([card1, card2, card3, card4, card5]);
-    var handRank = hand.analyseHand();
-    expect(handRank).toEqual(Hand.HIGHCARD);
-    console.log(hand.prettyPrint());
-  });
-
-  it('should analyse poker hands correctly - Pair', function() {
-    var card1 = new Card('Clubs', '2', false);
-    var card2 = new Card('Spades', '2', false);
-    var card3 = new Card('Clubs', '5', false);
-    var card4 = new Card('Hearts', '10', true);
-    var card5 = new Card('Hearts', 'Queen', true);
-    var hand = new Hand.Hand([card1, card2, card3, card4, card5]);
-    var handRank = hand.analyseHand();
-    expect(handRank).toEqual(Hand.PAIR);
-    console.log(hand.prettyPrint());
-  });
-
-  it('should analyse poker hands correctly - Two pair', function() {
-    var card1 = new Card('Clubs', '2', false);
-    var card2 = new Card('Spades', '2', false);
-    var card3 = new Card('Clubs', '5', false);
-    var card4 = new Card('Hearts', '5', true);
-    var card5 = new Card('Hearts', 'Queen', true);
-    var hand = new Hand.Hand([card1, card2, card3, card4, card5]);
-    var handRank = hand.analyseHand();
-    expect(handRank).toEqual(Hand.TWOPAIR);
-    console.log(hand.prettyPrint());
-  });
-
-  it('should analyse poker hands correctly - Three of a kind', function() {
-    var card1 = new Card('Clubs', '2', false);
-    var card2 = new Card('Spades', '2', false);
-    var card3 = new Card('Hearts', '2', true);
-    var card4 = new Card('Clubs', '5', false);
-    var card5 = new Card('Hearts', 'Queen', true);
-    var hand = new Hand.Hand([card1, card2, card3, card4, card5]);
-    var handRank = hand.analyseHand();
-    expect(handRank).toEqual(Hand.THREEOFAKIND);
-    console.log(hand.prettyPrint());
-  });
-
-  it('should analyse poker hands correctly - Straight', function() {
-    var card1 = new Card('Clubs', '2', false);
-    var card2 = new Card('Spades', '3', false);
-    var card3 = new Card('Hearts', '5', true);
-    var card4 = new Card('Clubs', '4', false);
-    var card5 = new Card('Hearts', '6', true);
-    var hand = new Hand.Hand([card1, card2, card3, card4, card5]);
-    var handRank = hand.analyseHand();
-    expect(handRank).toEqual(Hand.STRAIGHT);
-    console.log(hand.prettyPrint());
-  });
-
-  it('should analyse poker hands correctly - Straight (which is a Flush' +
-    ' draw)', function() {
-    var card1 = new Card('Clubs', '2', false);
-    var card2 = new Card('Clubs', '3', false);
-    var card3 = new Card('Clubs', '5', true);
-    var card4 = new Card('Clubs', '4', false);
-    var card5 = new Card('Hearts', '6', true);
-    var hand = new Hand.Hand([card1, card2, card3, card4, card5]);
-    var handRank = hand.analyseHand();
-    expect(handRank).toEqual(Hand.STRAIGHT);
-    console.log(hand.prettyPrint());
-  });
-
-  // Straight with an Ace as 1
-  it('should analyse poker hands correctly - Straight with Ace as 1', function() {
-    var card1 = new Card('Clubs', 'Ace', false);
-    var card2 = new Card('Spades', '3', false);
-    var card3 = new Card('Hearts', '4', true);
-    var card4 = new Card('Clubs', '5', false);
-    var card5 = new Card('Hearts', '2', true);
-    var hand = new Hand.Hand([card1, card2, card3, card4, card5]);
-    var handRank = hand.analyseHand();
-    expect(handRank).toEqual(Hand.STRAIGHT);
-    console.log(hand.prettyPrint());
-  });
-
-  it('should analyse poker hands correctly - Flush (which is a Straight' +
-    ' draw)', function() {
-    var card1 = new Card('Clubs', '2', false);
-    var card2 = new Card('Clubs', '3', false);
-    var card3 = new Card('Clubs', '5', true);
-    var card4 = new Card('Clubs', '6', false);
-    var card5 = new Card('Clubs', 'Queen', true);
-    var hand = new Hand.Hand([card1, card2, card3, card4, card5]);
-    var handRank = hand.analyseHand();
-    expect(handRank).toEqual(Hand.FLUSH);
-    console.log(hand.prettyPrint());
-  });
-
-  it('should analyse poker hands correctly - Full house', function() {
-    var card1 = new Card('Clubs', '2', false);
-    var card2 = new Card('Diamonds', '2', false);
-    var card3 = new Card('Clubs', '3', true);
-    var card4 = new Card('Diamonds', '3', false);
-    var card5 = new Card('Spades', '3', true);
-    var hand = new Hand.Hand([card1, card2, card3, card4, card5]);
-    var handRank = hand.analyseHand();
-    expect(handRank).toEqual(Hand.FULLHOUSE);
-    console.log(hand.prettyPrint());
-  });
-
-  it('should analyse poker hands correctly - Four of a kind', function() {
-    var card1 = new Card('Clubs', '2', false);
-    var card2 = new Card('Diamonds', '2', false);
-    var card3 = new Card('Hearts', '2', true);
-    var card4 = new Card('Spades', '2', false);
-    var card5 = new Card('Spades', '3', true);
-    var hand = new Hand.Hand([card1, card2, card3, card4, card5]);
-    var handRank = hand.analyseHand();
-    expect(handRank).toEqual(Hand.FOUROFAKIND);
-    console.log(hand.prettyPrint());
-  });
-
-  it('should analyse poker hands correctly - Straight flush', function() {
-    var card1 = new Card('Clubs', '2', false);
-    var card2 = new Card('Clubs', '3', false);
-    var card3 = new Card('Clubs', '4', true);
-    var card4 = new Card('Clubs', '5', false);
-    var card5 = new Card('Clubs', '6', true);
-    var hand = new Hand.Hand([card1, card2, card3, card4, card5]);
-    var handRank = hand.analyseHand();
-    expect(handRank).toEqual(Hand.STRAIGHTFLUSH);
-    console.log(hand.prettyPrint());
-  });
-
-  it('should analyse poker hands correctly - Straight flush (highest rank is' +
-    ' King)', function() {
-    var card1 = new Card('Clubs', '9', false);
-    var card2 = new Card('Clubs', '10', false);
-    var card3 = new Card('Clubs', 'Jack', true);
-    var card4 = new Card('Clubs', 'Queen', false);
-    var card5 = new Card('Clubs', 'King', true);
-    var hand = new Hand.Hand([card1, card2, card3, card4, card5]);
-    var handRank = hand.analyseHand();
-    expect(handRank).toEqual(Hand.STRAIGHTFLUSH);
-    console.log(hand.prettyPrint());
-  });
-
-  it('should analyse poker hands correctly - Royal flush', function() {
-    var card1 = new Card('Clubs', '10', false);
-    var card2 = new Card('Clubs', 'Jack', false);
-    var card3 = new Card('Clubs', 'Queen', true);
-    var card4 = new Card('Clubs', 'King', false);
-    var card5 = new Card('Clubs', 'Ace', true);
-    var hand = new Hand.Hand([card1, card2, card3, card4, card5]);
-    var handRank = hand.analyseHand();
-    expect(handRank).toEqual(Hand.ROYALFLUSH);
-    console.log(hand.prettyPrint());
-  });
-
-  // 6 card hands
-  it('should analyse poker hands correctly - High card - Straight draw', function() {
-    var card1 = new Card('Clubs', '2', false);
-    var card2 = new Card('Spades', 'Jack', false);
-    var card3 = new Card('Clubs', '5', false);
-    var card4 = new Card('Hearts', '10', true);
-    var card5 = new Card('Hearts', 'Queen', true);
-    var card6 = new Card('Hearts', 'King', true);
-    var hand = new Hand.Hand([card1, card2, card3, card4, card5, card6]);
-    var handRank = hand.analyseHand();
-    expect(handRank).toEqual(Hand.HIGHCARD);
-    console.log(hand.prettyPrint());
-  });
-
-  it('should analyse poker hands correctly - High card - Straight draw with' +
-    ' a hole in the middle', function() {
-    var card1 = new Card('Clubs', '2', false);
-    var card2 = new Card('Spades', 'Jack', false);
-    var card3 = new Card('Clubs', '5', false);
-    var card4 = new Card('Hearts', '10', true);
-    var card5 = new Card('Hearts', 'King', true);
-    var card6 = new Card('Hearts', 'Ace', true);
-    var hand = new Hand.Hand([card1, card2, card3, card4, card5, card6]);
-    var handRank = hand.analyseHand();
-    expect(handRank).toEqual(Hand.HIGHCARD);
-    console.log(hand.prettyPrint());
-  });
-
-  it('should analyse poker hands correctly - High card - Straight draw with' +
-    ' a hole in the middle and an Ace as lowest card', function() {
-    var card1 = new Card('Clubs', '2', false);
-    var card2 = new Card('Spades', '3', false);
-    var card3 = new Card('Clubs', '5', false);
-    var card4 = new Card('Hearts', '10', true);
-    var card5 = new Card('Hearts', 'King', true);
-    var card6 = new Card('Hearts', 'Ace', true);
-    var hand = new Hand.Hand([card1, card2, card3, card4, card5, card6]);
-    var handRank = hand.analyseHand();
-    expect(handRank).toEqual(Hand.HIGHCARD);
-    console.log(hand.prettyPrint());
-  });
-
-  it('should analyse poker hands correctly - High card - Straight draw with' +
-    ' consecutive cards and an Ace as lowest card', function() {
-    var card1 = new Card('Clubs', '2', false);
-    var card2 = new Card('Spades', '3', false);
-    var card3 = new Card('Clubs', '4', false);
-    var card4 = new Card('Hearts', '10', true);
-    var card5 = new Card('Hearts', 'King', true);
-    var card6 = new Card('Hearts', 'Ace', true);
-    var hand = new Hand.Hand([card1, card2, card3, card4, card5, card6]);
-    var handRank = hand.analyseHand();
-    expect(handRank).toEqual(Hand.HIGHCARD);
-    console.log(hand.prettyPrint());
-  });
-
-  it('should analyse poker hands correctly - High card - Straight draw with' +
-    ' Ace as highest card', function() {
-    var card1 = new Card('Clubs', '2', false);
-    var card2 = new Card('Spades', '3', false);
-    var card3 = new Card('Clubs', 'Jack', false);
-    var card4 = new Card('Hearts', 'Queen', true);
-    var card5 = new Card('Hearts', 'King', true);
-    var card6 = new Card('Hearts', 'Ace', true);
-    var hand = new Hand.Hand([card1, card2, card3, card4, card5, card6]);
-    var handRank = hand.analyseHand();
-    expect(handRank).toEqual(Hand.HIGHCARD);
-    console.log(hand.prettyPrint());
-  });
-
-  it('should analyse poker hands correctly - High card - Flush draw', function() {
-    var card1 = new Card('Clubs', '2', false);
-    var card2 = new Card('Spades', '3', false);
-    var card3 = new Card('Hearts', 'Jack', false);
-    var card4 = new Card('Hearts', '7', true);
-    var card5 = new Card('Hearts', 'King', true);
-    var card6 = new Card('Hearts', 'Ace', true);
-    var hand = new Hand.Hand([card1, card2, card3, card4, card5, card6]);
-    var handRank = hand.analyseHand();
-    expect(handRank).toEqual(Hand.HIGHCARD);
-    console.log(hand.prettyPrint());
-  });
-
-  it('should analyse poker hands correctly - High card - Straight Flush draw', function() {
-    var card1 = new Card('Clubs', '2', false);
-    var card2 = new Card('Spades', '3', false);
-    var card3 = new Card('Hearts', 'Jack', false);
-    var card4 = new Card('Hearts', 'Queen', true);
-    var card5 = new Card('Hearts', 'King', true);
-    var card6 = new Card('Hearts', 'Ace', true);
-    var hand = new Hand.Hand([card1, card2, card3, card4, card5, card6]);
-    var handRank = hand.analyseHand();
-    expect(handRank).toEqual(Hand.HIGHCARD);
-    console.log(hand.prettyPrint());
-  });
-
-  it('should analyse poker hands correctly - Pair', function() {
-    var card1 = new Card('Clubs', '2', false);
-    var card2 = new Card('Spades', '2', false);
-    var card3 = new Card('Clubs', '5', false);
-    var card4 = new Card('Hearts', '10', true);
-    var card5 = new Card('Hearts', 'Queen', true);
-    var card6 = new Card('Hearts', 'Ace', false);
-    var hand = new Hand.Hand([card1, card2, card3, card4, card5, card6]);
-    var handRank = hand.analyseHand();
-    expect(handRank).toEqual(Hand.PAIR);
-    console.log(hand.prettyPrint());
-  });
-
-  it('should analyse poker hands correctly - Pair that is a Flush draw', function() {
-    var card1 = new Card('Clubs', '2', false);
-    var card2 = new Card('Spades', '2', false);
-    var card3 = new Card('Hearts', '5', false);
-    var card4 = new Card('Hearts', '10', true);
-    var card5 = new Card('Hearts', 'Queen', true);
-    var card6 = new Card('Hearts', 'Ace', false);
-    var hand = new Hand.Hand([card1, card2, card3, card4, card5, card6]);
-    var handRank = hand.analyseHand();
-    expect(handRank).toEqual(Hand.PAIR);
-    console.log(hand.prettyPrint());
-  });
-
-  it('should analyse poker hands correctly - Pair that is a Straight draw', function() {
-    var card1 = new Card('Clubs', '2', false);
-    var card2 = new Card('Spades', '2', false);
-    var card3 = new Card('Hearts', '3', false);
-    var card4 = new Card('Hearts', '4', true);
-    var card5 = new Card('Hearts', 'Queen', true);
-    var card6 = new Card('Hearts', '5', false);
-    var hand = new Hand.Hand([card1, card2, card3, card4, card5, card6]);
-    var handRank = hand.analyseHand();
-    expect(handRank).toEqual(Hand.PAIR);
-    console.log(hand.prettyPrint());
-  });
-
 });
 

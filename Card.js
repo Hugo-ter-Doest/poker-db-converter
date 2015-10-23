@@ -17,6 +17,7 @@
 */
 
 var suites = ['Clubs', 'Spades', 'Diamonds', 'Hearts'];
+var suitesAbbrev = ['C', 'S', 'D', 'H'];
 
 var TWO = 0;
 var THREE = 1;
@@ -31,11 +32,19 @@ var KING = 11;
 var ACE = 12;
 var ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen',
   'King', 'Ace'];
+var ranksAbbrev = ['2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q',
+  'K', 'A'];
 
-function Card(suite, rank, isHoleCard) {
-  this.suite = suites.indexOf(suite);
-  this.rank = ranks.indexOf(rank);
-  this.isHoleCard = isHoleCard;
+
+function Card(suite, rank) {
+  if (rank !== undefined) {
+    this.suite = suites.indexOf(suite);
+    this.rank = ranks.indexOf(rank);
+  }
+  else {
+    this.suite = suitesAbbrev.indexOf(suite[0]);
+    this.rank = ranksAbbrev.indexOf(suite[1]);
+  }
 }
 
 Card.prototype.prettyPrint = function() {
