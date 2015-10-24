@@ -1237,23 +1237,12 @@ Hand.prototype.turnProbabilities = function() {
       // Three of a Kind: is not possible
       //this.frequency[THREEOFAKIND] = 0;
 
-      // Straight: should not match any of the 6 ranks in the hand
-      // Also a higher straight may be possible
-      this.frequency[STRAIGHT] = 46 - 6 * 3;
-      if (this.higherStraightIsPossible()) {
-        this.frequency[STRAIGHT] += 4;
-      }
+      // Straight and/or Flush
+      this.checkStraightAndOrFlush();
 
-      var isFlushDraw = this.isFlushDraw();
-
-      if (isFlushDraw) {
-        this.frequency[STRAIGHTFLUSH] = 1;
-      }
-
-      // Flush: add a card with the right suite, but should not make a Straight
-      if (isFlushDraw) {
-        this.frequency[FLUSH] = 12 - 3 - this.frequency[STRAIGHTFLUSH];
-      }
+      this.frequency[STRAIGHT] = 46 -
+        this.frequency[STRAIGHTFLUSH] -
+        this.frequency[FLUSH];
 
       // Full House: is not possible
       //this.frequency[FULLHOUSE] = 0;
@@ -1277,16 +1266,11 @@ Hand.prototype.turnProbabilities = function() {
       // Three of a Kind: is not possible
       //this.frequency[THREEOFAKIND] = 0;
 
+      // Straight and/or Flush
+      this.checkStraightAndOrFlush();
 
-      // Straight: is a lower rank
-      //this.frequency[STRAIGHT] = 0;
-
-      if (this.nrOutsForStraight()) {
-        this.frequency[STRAIGHTFLUSH] = 1;
-      }
-
-      // Flush: all remaining cards are allowed
-      this.frequency[FLUSH] = 46 - this.frequency[STRAIGHTFLUSH];
+      this.frequency[FLUSH] = 46 -
+        this.frequency[STRAIGHTFLUSH];
 
       // Full house: is not possible
       //this.frequency[FULLHOUSE] = 0;
@@ -1323,10 +1307,10 @@ Hand.prototype.turnProbabilities = function() {
       this.frequency[FOUROFAKIND] = 1;
 
       // Straight Flush: is not possible
-      this.frequency[STRAIGHTFLUSH] = 0;
+      //this.frequency[STRAIGHTFLUSH] = 0;
 
       // Royal Flush: is not possible
-      this.frequency[ROYALFLUSH] = 0;
+      //this.frequency[ROYALFLUSH] = 0;
       break;
 
     case FOUROFAKIND:
@@ -1355,10 +1339,10 @@ Hand.prototype.turnProbabilities = function() {
       this.frequency[FOUROFAKIND] = 46;
 
       // Straight Flush: is not possible
-      this.frequency[STRAIGHTFLUSH] = 0;
+      //this.frequency[STRAIGHTFLUSH] = 0;
 
       // Royal Flush: is not possible
-      this.frequency[ROYALFLUSH] = 0;
+      //this.frequency[ROYALFLUSH] = 0;
       break;
 
     case STRAIGHTFLUSH:
@@ -1393,16 +1377,6 @@ Hand.prototype.turnProbabilities = function() {
       break;
 
     case ROYALFLUSH:
-      this.frequency[HIGHCARD] = 0;
-      this.frequency[PAIR] = 0;
-      this.frequency[TWOPAIR] = 0;
-      this.frequency[THREEOFAKIND] = 0;
-      this.frequency[STRAIGHT] = 0;
-      this.frequency[FLUSH] = 0;
-      this.frequency[FULLHOUSE] = 0;
-      this.frequency[FOUROFAKIND] = 0;
-      this.frequency[STRAIGHTFLUSH] = 0;
-
       // Royal Flush: all cards allowed
       this.frequency[ROYALFLUSH] = 46;
       break;
@@ -1648,7 +1622,7 @@ Hand.prototype.prettyPrint = function() {
   else {
     handRankName = handRankNames[this.rank];
   }
-  str += 'Hand vector: ' + this.vector + '\n';
+  str += 'HAND VECTOR\n' + this.vector + '\n';
 
   str += '===================================\n';
   str += 'RANK\n';
