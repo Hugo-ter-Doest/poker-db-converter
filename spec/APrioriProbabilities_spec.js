@@ -16,16 +16,21 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-var hand = require('../Hand');
-var aPrioriProbabilities = require('../APrioriProbabilities');
+var APrioriProbabilities = require('../APrioriProbabilities');
+var Hand = require('../Hand');
+
 
 describe('APrioriProbabilities', function() {
+  var hand = new Object();
+  hand.cards = new Array(2);
+  var aPrioriProbabilities = new APrioriProbabilities(hand);
   it('a priori frequencies should add up to total number of combinations for' +
     ' two card hands', function () {
-    var totalComb = aPrioriProbabilities.totalCombinations(2);
+    var totalComb = aPrioriProbabilities.totalCombinations();
     var totalFreq = 0;
-    for (var rank = hand.HIGHCARD; rank <= hand.CONNECTEDANDSUITED; rank++) {
-      totalFreq += aPrioriProbabilities.rankFrequency(2, rank);
+    for (var rank = Hand.HIGHCARD; rank <= Hand.CONNECTEDANDSUITED; rank++) {
+      hand.rank = rank;
+      totalFreq += aPrioriProbabilities.rankFrequency();
     }
     expect(totalFreq).toEqual(totalComb);
   });
@@ -33,9 +38,11 @@ describe('APrioriProbabilities', function() {
   nrCardsA.forEach(function (nrCards) {
     it('a priori frequencies should add up to total number of combinations' +
       ' for ' + nrCards + ' card hands', function () {
+      hand.cards = new Array(nrCards);
       var totalComb = aPrioriProbabilities.totalCombinations(nrCards);
       var totalFreq = 0;
-      for (var rank = hand.HIGHCARD; rank <= hand.ROYALFLUSH; rank++) {
+      for (var rank = Hand.HIGHCARD; rank <= Hand.ROYALFLUSH; rank++) {
+        hand.rank = rank;
         totalFreq += aPrioriProbabilities.rankFrequency(nrCards, rank);
       }
       expect(totalFreq).toEqual(totalComb);

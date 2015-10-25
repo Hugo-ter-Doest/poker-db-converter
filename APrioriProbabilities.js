@@ -173,25 +173,29 @@ function C(n, k) {
   return coeff;
 }
 
-exports.rankFrequency = function(nrCards, rank) {
-  switch (nrCards) {
+function APrioriProbabilities(hand) {
+  this.hand = hand;
+}
+
+APrioriProbabilities.prototype.rankFrequency = function() {
+  switch (this.hand.cards.length) {
     case 2:
-      return twoCardHandFreq[rank];
+      return twoCardHandFreq[this.hand.rank];
       break;
     case 5:
-      return fiveCardHandFreq[rank];
+      return fiveCardHandFreq[this.hand.rank];
       break;
     case 6:
-      return sixCardHandFreq[rank];
+      return sixCardHandFreq[this.hand.rank];
       break;
     case 7:
-      return sevenCardHandFreq[rank];
+      return sevenCardHandFreq[this.hand.rank];
       break;
   }
 };
 
-exports.totalCombinations = function(nrCards) {
-  switch (nrCards) {
+APrioriProbabilities.prototype.totalCombinations = function() {
+  switch (this.hand.cards.length) {
     case 2:
       return twoCardHandTotalCombinations;
       break;
@@ -207,19 +211,21 @@ exports.totalCombinations = function(nrCards) {
   }
 };
 
-exports.rankProbability = function(nrCards, rank) {
-  switch (nrCards) {
+APrioriProbabilities.prototype.rankProbability = function() {
+  switch (this.hand.cards.length) {
     case 2:
-      return twoCardHandFreq[rank] / twoCardHandTotalCombinations;
+      return twoCardHandFreq[this.hand.rank] / twoCardHandTotalCombinations;
       break;
     case 5:
-      return fiveCardHandFreq[rank] / fiveCardHandTotalCombinations;
+      return fiveCardHandFreq[this.hand.rank] / fiveCardHandTotalCombinations;
       break;
     case 6:
-      return sixCardHandFreq[rank] / sixCardHandTotalCombinations;
+      return sixCardHandFreq[this.hand.rank] / sixCardHandTotalCombinations;
       break;
     case 7:
-      return sevenCardHandFreq[rank] / sevenCardHandTotalCombinations;
+      return sevenCardHandFreq[this.hand.rank] / sevenCardHandTotalCombinations;
       break;
   }
 };
+
+module.exports = APrioriProbabilities;
