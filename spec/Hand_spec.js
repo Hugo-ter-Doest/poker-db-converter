@@ -152,7 +152,7 @@ var testCases = [
   ['Four of a Kind',
     ['H2', 'S2', 'H3', 'D3', 'C3', 'S3'], Hand.FOUROFAKIND, Hand.FOUROFAKIND, 46],
   ['Straight Flush',
-    ['H1', 'H2', 'H3', 'H4', 'H5', 'S3'], Hand.STRAIGHTFLUSH, Hand.STRAIGHTFLUSH, 46],
+    ['HA', 'H2', 'H3', 'H4', 'H5', 'S3'], Hand.STRAIGHTFLUSH, Hand.STRAIGHTFLUSH, 46],
   ['Straight Flush',
     ['HT', 'HJ', 'HQ', 'HK', 'HA', 'S3'], Hand.ROYALFLUSH, Hand.ROYALFLUSH, 46],
 

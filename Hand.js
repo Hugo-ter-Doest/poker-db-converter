@@ -18,6 +18,7 @@
 */
 
 var Card = require('./Card');
+var aPrioriProbabilities = require('./APrioriProbabilities');
 
 var HIGHCARD = 0;
 var PAIR = 1;
@@ -41,212 +42,16 @@ var CONNECTEDANDSUITED = 4;
 var pocketRankNames = ['High card', 'Pair', 'Suited cards', 'Connected cards',
   'Connected and suited'];
 
+
 function Hand(cards) {
   this.cards = [];
   var that = this;
-  cards.forEach(function(c) {
-    that.cards.push(new Card.Card(c));
-  });
-  this.numberOfPairs = 0;
-  this.hasThreeOfAKind = false;
-  this.hasFourOfAKind = false;
-  this.suites = {};
+  if (cards) {
+    cards.forEach(function (c) {
+      that.cards.push(new Card.Card(c));
+    });
+  }
 }
-
-// Based on: https://en.wikipedia.org/wiki/Poker_probability
-// 7 card probabilities
-// Total number of combinations is 133,784,560
-// hand 	        number 	    Probability
-// Royal flush    4,324 	    .000032
-// Straight flush 37,260 	    .000279
-// 4-of-a-kind 	  224,848 	  .0017
-// Full house 	  3,473,184 	.026
-// Flush 	        4,047,644 	.030
-// Straight 	    6,180,020 	.046
-// 3-of-a-kind 	  6,461,620 	.048
-// Two pairs 	    31,433,400 	.235
-// Pair 	        58,627,800 	.438
-// High card 	    23,294,460 	.174
-Hand.prototype.sevenCardHandProb = function() {
-  var totalNumberOfCombinations = 133784560;
-  var numberOfCombinations = 0;
-  switch (this.rank) {
-    case HIGHCARD:
-      numberOfCombinations = 23294460;
-      break;
-    case PAIR:
-      numberOfCombinations = 58627800;
-      break;
-    case TWOPAIR:
-      numberOfCombinations = 31433400;
-      break;
-    case THREEOFAKIND:
-      numberOfCombinations = 6461620;
-      break;
-    case STRAIGHT:
-      numberOfCombinations = 6180020;
-      break;
-    case FLUSH:
-      numberOfCombinations = 4047644;
-      break;
-    case FULLHOUSE:
-      numberOfCombinations = 3473184;
-      break;
-    case FOUROFAKIND:
-      numberOfCombinations = 224848;
-      break;
-    case STRAIGHTFLUSH:
-      numberOfCombinations = 37260;
-      break;
-    case ROYALFLUSH:
-      numberOfCombinations = 4324;
-      break;
-  }
-  this.rankProbability = numberOfCombinations / totalNumberOfCombinations;
-};
-
-Hand.prototype.sixCardHandProb = function() {
-  var totalNumberOfCombinations = C(52, 6);
-  var numberOfCombinations = 0;
-  switch (this.rank) {
-    case HIGHCARD:
-      numberOfCombinations = 0;
-      break;
-    case PAIR:
-      // Possible pairs, 5 cards are freely chosen, minus three of a kind and four of a kind
-      numberOfCombinations = C(13, 1) * C(4, 2) * C(50, 3);
-      break;
-    case TWOPAIR:
-      numberOfCombinations = 0;
-      break;
-    case THREEOFAKIND:
-      numberOfCombinations = 0;
-      break;
-    case STRAIGHT:
-      numberOfCombinations = 0;
-      break;
-    case FLUSH:
-      numberOfCombinations = 0;
-      break;
-    case FULLHOUSE:
-      numberOfCombinations = 0;
-      break;
-    case FOUROFAKIND:
-      numberOfCombinations = 0;
-      break;
-    case STRAIGHTFLUSH:
-      numberOfCombinations = 0;
-      break;
-    case ROYALFLUSH:
-      numberOfCombinations = 0;
-      break;
-  }
-  this.rankProbability = numberOfCombinations / totalNumberOfCombinations;
-
-};
-
-// Based on: https://en.wikipedia.org/wiki/Poker_probability
-// 5 card probabilities
-// Total number of combinations is C(52, 5) = 2,598,960
-// hand 	        number 	    Probability
-// Royal flush    4 	        0.00000154
-// Straight flush 36 	        0.0000139
-// 4-of-a-kind 	  624 	      0.000240
-// Full house 	  3,744 	    0.001441
-// Flush 	        5,108 	    0.001965
-// Straight 	    10,200 	    0.003925
-// 3-of-a-kind 	  54,912 	    0.021128
-// Two pairs 	    123,552 	  0.047539
-// Pair 	        1,098,240 	0.422569
-// High card 	    1,302,540 	0.501177
-Hand.prototype.fiveCardHandProb = function() {
-  var totalNumberOfCombinations = 2598960;
-  var numberOfCombinations = 0;
-  switch (this.rank) {
-    case HIGHCARD:
-      numberOfCombinations = 1302540;
-      break;
-    case PAIR:
-      numberOfCombinations = 1098240;
-      break;
-    case TWOPAIR:
-      numberOfCombinations = 123552;
-      break;
-    case THREEOFAKIND:
-      numberOfCombinations = 54912;
-      break;
-    case STRAIGHT:
-      numberOfCombinations = 10200;
-      break;
-    case FLUSH:
-      numberOfCombinations = 5108;
-      break;
-    case FULLHOUSE:
-      numberOfCombinations = 3744;
-      break;
-    case FOUROFAKIND:
-      numberOfCombinations = 624;
-      break;
-    case STRAIGHTFLUSH:
-      numberOfCombinations = 36;
-      break;
-    case ROYALFLUSH:
-      numberOfCombinations = 4;
-      break;
-  }
-  this.rankProbability = numberOfCombinations / totalNumberOfCombinations;
-};
-
-// Based on: https://en.wikipedia.org/wiki/Poker_probability
-// 2 card probabilities
-// Total number of combinations is C(52, 2) = 1,326
-//Pair                                        78/1326 = 0.0588
-//Suited cards                                312/1326 = 0.2353
-//Unsuited cards non paired                   936/1325 = 0.7059
-//Suited connectors                           (13 x 4) / 1326 = 0.0392
-//Connected cards                             (13 x 4 x 4) / 1326 = 0.156
-
-//AKs (or any specific suited cards) 	        0.00302 	331 : 1
-//AA (or any specific pair) 	                0.00452 	221 : 1
-//AKs, KQs, QJs, or JTs (suited cards) 	      0.0121 	  81.9 : 1
-//AK (or any specific non-pair incl. suited) 	0.0121 	  81.9 : 1
-//AA, KK, or QQ 	                            0.0136 	  72.7 : 1
-//AA, KK, QQ or JJ 	                          0.0181 	  54.3 : 1
-//Suited cards, jack or better 	              0.0181 	  54.3 : 1
-//AA, KK, QQ, JJ, or TT 	                    0.0226 	  43.2 : 1
-//Suited cards, 10 or better 	                0.0302 	  32.2 : 1
-//Suited connectors 	                        0.0392 	  24.5 : 1
-//Connected cards, 10 or better 	            0.0483 	  19.7 : 1
-//Any 2 cards with rank at least queen 	      0.0498 	  19.1 : 1
-//Any 2 cards with rank at least jack 	      0.0905 	  10.1 : 1
-//Any 2 cards with rank at least 10 	        0.143 	  5.98 : 1
-//Connected cards (cards of consecutive rank) 0.157 	  5.38 : 1
-//Any 2 cards with rank at least 9 	          0.208 	  3.81 : 1
-//Not connected nor suited, at least one 2-9 	0.534 	  0.873 : 1
-Hand.prototype.twoCardHandProb = function() {
-  var totalNumberOfCombinations = 1326;
-  var numberOfCombinations = 0;
-  switch (this.rank) {
-    case HIGHCARD:
-      // Unsuited cards non paired
-      numberOfCombinations = 936;
-      break;
-    case SUITEDCARDS:
-      numberOfCombinations = 312;
-      break;
-    case CONNECTEDCARDS:
-      numberOfCombinations = 208;
-      break;
-    case CONNECTEDANDSUITED:
-      numberOfCombinations = 52;
-      break;
-    case PAIR:
-      numberOfCombinations = 78;
-      break;
-  }
-  this.rankProbability = numberOfCombinations / totalNumberOfCombinations;
-};
-
 // Binomial coefficient
 function C(n, k) {
   var coeff = 1;
@@ -259,24 +64,18 @@ function C(n, k) {
   return coeff;
 }
 
-Hand.prototype.initFrequencies = function() {
+Hand.prototype.initAnalysis = function() {
   this.frequency = [];
-  this.frequency[HIGHCARD] = 0;
-  this.frequency[PAIR] = 0;
-  this.frequency[TWOPAIR] = 0;
-  this.frequency[THREEOFAKIND] = 0;
-  this.frequency[STRAIGHT] = 0;
-  this.frequency[FLUSH] = 0;
-  this.frequency[FULLHOUSE] = 0;
-  this.frequency[FOUROFAKIND] = 0;
-  this.frequency[STRAIGHTFLUSH] = 0;
-  this.frequency[ROYALFLUSH] = 0;
+  for (var rank = HIGHCARD; rank <= ROYALFLUSH; rank++) {
+    this.frequency[rank] = 0;
+  }
+  this.vector = this.initVector(this.cards);
 };
 
 // Calculates conditional probabilities given a hand with two cards
 // Maps hand rank to new (better) hand ranks
 Hand.prototype.preflopProbabilities = function() {
-  this.initFrequencies();
+  this.initAnalysis();
   this.totalCombinations = C(50, 3);
   // Depending on the hand rank we calculate the probabilities of
   // a new rank
@@ -658,12 +457,12 @@ Hand.prototype.preflopProbabilities = function() {
   }
 };
 
-// Checks a 5 card hand for a Straight draw
-Hand.prototype.isStraightDraw = function(cards) {
+// Create a bit vector from the hand
+Hand.prototype.initVector = function(cards) {
   // Create a histogram
   var histogram = {};
   // Check for equal ranks
-  cards.forEach(function (c) {
+  cards.forEach(function(c) {
     if (!histogram[c.rank]) {
       histogram[c.rank] = 1;
     }
@@ -672,10 +471,6 @@ Hand.prototype.isStraightDraw = function(cards) {
     }
   });
 
-  // Straight masks
-  var masks = ['11110', '01111', '11110', '10111', '11011', '11101'];
-
-  // Create a bit vector from the hand
   var vector = '';
   for (var i = 0; i < 13; i++) {
     if (histogram[i]) {
@@ -685,7 +480,24 @@ Hand.prototype.isStraightDraw = function(cards) {
       vector = vector + '0';
     }
   }
-  // Check masks with Ace as highest card
+
+  // If we have an Ace add it at the beginning as well
+  if (histogram[Card.ACE]) {
+    vector = '1' + vector;
+  }
+  else {
+    vector = '0' + vector;
+  }
+  return vector;
+};
+
+// Checks a 5 card hand for a Straight draw
+Hand.prototype.isStraightDraw = function(cards) {
+  // Straight masks
+  var masks = ['11110', '01111', '11110', '10111', '11011', '11101'];
+
+  var vector = this.initVector(cards);
+
   var maskIndex = -1;
   if (masks.some(function (m, index) {
       if (vector.indexOf(m) > -1) {
@@ -694,72 +506,18 @@ Hand.prototype.isStraightDraw = function(cards) {
     })) {
     return true;
   }
-
-  // Check masks with Ace as lowest card
-  if (histogram[Card.ACE]) {
-    vector = '1' + vector.substr(0, vector.length - 1);
-  }
-  if (masks.some(function (m, index) {
-      if (vector.indexOf(m) > -1) {
-        return (true);
-      }
-    })) {
-    return true;
-  }
-
-  // Check for possibility of Ace as draw card
-  if (histogram[Card.TWO]) {
-    // Prefix a 0 for the Ace
-    vector = '0' + vector.substr(0, vector.length - 1);
-    if (masks.some(function (m, index) {
-        if (vector.indexOf(m) > -1) {
-          return (true);
-        }
-      })) {
-      return true;
-    }
-  }
+  // No match, so no Straight draw
   return false;
 };
 
 // Calculates the number of outs for an arbitrary hand
 Hand.prototype.nrOutsForStraight = function() {
-  // Create a histogram
-  var histogram = {};
-  // Check for equal ranks
-  this.cards.forEach(function(c) {
-    if (!histogram[c.rank]) {
-      histogram[c.rank] = 1;
-    }
-    else {
-      histogram[c.rank]++;
-    }
-  });
-
   // Straight masks
   var masks = ['011110', '11110', '01111', '11110', '10111', '11011', '11101'];
   // Number of outs per mask
   var nrOuts = [8, 4, 4, 4, 4, 4, 4];
 
-  // Create a bit vector from the hand
-  this.vector = '';
-  for (var i = 0; i < 13; i++) {
-    if (histogram[i]) {
-      this.vector = this.vector + '1';
-    }
-    else {
-      this.vector = this.vector + '0';
-    }
-  }
-
-  // If we have an Ace add it at the beginning as well
-  if (histogram[Card.ACE]) {
-    this.vector = '1' + this.vector;
-  }
-  else {
-    this.vector = '0' + this.vector;
-  }
-
+  this.vector = this.initVector(this.cards);
   var maskIndex = -1;
 
   var that = this;
@@ -832,7 +590,7 @@ Hand.prototype.isStraightAndOrFlushDraw = function(cards) {
 // Calculates conditional probabilities given a hand of five cards
 // Maps hand rank to new (better) hand ranks
 Hand.prototype.flopProbabilities = function() {
-  this.initFrequencies();
+  this.initAnalysis();
   // 52 - 5 cards left to choose from
   this.totalCombinations = C(47, 1);
   switch (this.rank) {
@@ -1107,7 +865,7 @@ Hand.prototype.checkStraightAndOrFlush = function() {
 
 // Calculates the probabilities of new hands at the turn
 Hand.prototype.turnProbabilities = function() {
-  this.initFrequencies();
+  this.initAnalysis();
   // 52 - 6 cards left to choose from
   this.totalCombinations = 46;
   switch(this.rank) {
@@ -1479,7 +1237,7 @@ Hand.prototype.calculateHandRank5 = function(cards) {
           else {
             if (isFlush) {
               if (isStraight) {
-                if (cards[4].rank === Card.ACE) {
+                if ((cards[4].rank === Card.ACE) && (cards[3].rank === Card.KING)) {
                   return ROYALFLUSH;
                 }
                 else {
@@ -1572,21 +1330,17 @@ Hand.prototype.calculateHandRank = function() {
 // Returns the hand rank
 Hand.prototype.analyseHand = function() {
   this.calculateHandRank();
+  this.rankProbability = aPrioriProbabilities.rankProbability(2, this.rank);
+
   switch(this.cards.length) {
     case 2:
-      this.twoCardHandProb();
       this.preflopProbabilities();
       break;
     case 5:
-      this.fiveCardHandProb();
       this.flopProbabilities();
       break;
     case 6:
-      this.sixCardHandProb();
       this.turnProbabilities();
-      break;
-    case 7:
-      this.sevenCardHandProb();
       break;
   }
   this.sumFrequencies = 0;
