@@ -445,25 +445,6 @@ PosteriorProbabilities.prototype.preflopProbabilities = function() {
   }
 };
 
-// Checks a 5 card hand for a Straight draw
-PosteriorProbabilities.prototype.isStraightDraw = function(cards) {
-  // Straight masks
-  var masks = ['11110', '01111', '11110', '10111', '11011', '11101'];
-
-  var vector = this.hand.initVector(cards);
-
-  var maskIndex = -1;
-  if (masks.some(function (m, index) {
-      if (vector.indexOf(m) > -1) {
-        return (true);
-      }
-    })) {
-    return true;
-  }
-  // No match, so no Straight draw
-  return false;
-};
-
 // Calculates the number of outs for an arbitrary hand
 PosteriorProbabilities.prototype.nrOutsForStraight = function() {
   // Straight masks
@@ -491,55 +472,8 @@ PosteriorProbabilities.prototype.nrOutsForStraight = function() {
 var NODRAW = 0;
 var STRAIGHTDRAW = 1;
 var FLUSHDRAW = 2;
-var STRAIGHTFLUSHDRAW = 3;
-
-// Precondition: cards is a 5 card hand, and ordered
-// Returns one of (NODRAW, STRAIGHTDRAW, FLUSHDRAW, STRAIGHTFLUSHDRAW)
-PosteriorProbabilities.prototype.isStraightAndOrFlushDraw = function(cards) {
-  nrCardsPerSuite = [0, 0, 0, 0];
-  var that = this;
-  cards.forEach(function(card) {
-    nrCardsPerSuite[card.suite]++;
-  });
-  var flushSuite = -1;
-  var isFlushDraw =
-    nrCardsPerSuite.some(function(nrOfCards, suite) {
-      if (nrOfCards === 4) {
-        flushSuite = suite;
-        return true;
-      }
-    });
-  // Check for Straight Flush draw based on these four cards
-  if (isFlushDraw) {
-    for (var i = 0; i < cards.length; i++) {
-      if (cards[i].suite !== flushSuite) {
-        // Remove card
-        cards.splice(i, 1);
-      }
-    }
-    if (this.isStraightDraw(cards)) {
-      return STRAIGHTFLUSHDRAW;
-    }
-    else {
-      return FLUSHDRAW;
-    }
-  }
-  if (this.hand.isFlush(cards)) {
-    if (this.isStraightDraw(cards)) {
-      return STRAIGHTFLUSHDRAW;
-    }
-    else {
-      return FLUSHDRAW;
-    }
-  }
-
-  if (this.isStraightDraw(cards)) {
-    return STRAIGHTDRAW;
-  }
-  else {
-    return NODRAW;
-  }
-};
+var STRAIGHTANDFLUSHDRAW = 3;
+var STRAIGHTFLUSHDRAW = 4;
 
 // Calculates conditional probabilities given a hand of five cards
 // Maps hand rank to new (better) hand ranks
@@ -550,7 +484,7 @@ PosteriorProbabilities.prototype.flopProbabilities = function() {
   this.totalCombinations = C(47, 1);
   switch (this.hand.rank) {
     case HIGHCARD:
-      var isStraightAndOrFlushDraw = this.isStraightAndOrFlushDraw(cards.slice());
+      var isStraightAndOrFlushDraw = this.hand.isStraightAndOrFlushDraw5(cards.slice());
       console.log(isStraightAndOrFlushDraw);
       if (isStraightAndOrFlushDraw === STRAIGHTFLUSHDRAW) {
         this.frequency[STRAIGHTFLUSH] = 1;
@@ -583,7 +517,7 @@ PosteriorProbabilities.prototype.flopProbabilities = function() {
       break;
 
     case PAIR:
-      var isStraightAndOrFlushDraw = this.isStraightAndOrFlushDraw(cards.slice());
+      var isStraightAndOrFlushDraw = this.hand.isStraightAndOrFlushDraw5(cards.slice());
 
       if (isStraightAndOrFlushDraw === STRAIGHTFLUSHDRAW) {
         this.frequency[STRAIGHTFLUSH] = 1;
@@ -637,7 +571,7 @@ PosteriorProbabilities.prototype.flopProbabilities = function() {
       break;
 
     case STRAIGHT:
-      var isStraightAndOrFlushDraw = this.isStraightAndOrFlushDraw(cards.slice());
+      var isStraightAndOrFlushDraw = this.hand.isStraightAndOrFlushDraw5(cards.slice());
 
       if (isStraightAndOrFlushDraw === STRAIGHTFLUSHDRAW) {
         this.frequency[STRAIGHTFLUSH] = 1;
@@ -660,7 +594,7 @@ PosteriorProbabilities.prototype.flopProbabilities = function() {
       break;
 
     case FLUSH:
-      var isStraightAndOrFlushDraw = this.isStraightAndOrFlushDraw(cards.slice());
+      var isStraightAndOrFlushDraw = this.hand.isStraightAndOrFlushDraw5(cards.slice());
 
       if (isStraightAndOrFlushDraw === STRAIGHTFLUSHDRAW) {
         this.frequency[STRAIGHTFLUSH] = 1;
@@ -721,52 +655,33 @@ PosteriorProbabilities.prototype.higherStraightIsPossible = function() {
   return (!isHighestStraight);
 };
 
-// Checks each possible five card hand for Flush draw, Straight draw, and
-// Straight Flush draw
+// Calculates outs for Straight Flush, Straight and Flush
 PosteriorProbabilities.prototype.checkStraightAndOrFlush = function() {
   var nrOutsForStraight = this.nrOutsForStraight();
-  var isStraightFlushDraw = false;
-  var isFlushDraw = false;
-  var isStraightDraw = false;
-  var cards;
-  for (var i = 0; i < 6; i++) {
-    cards = this.hand.cards.slice();
-    cards.splice(i, 1);
-    isStraightAndOrFlush = this.isStraightAndOrFlushDraw(cards);
-    switch (isStraightAndOrFlush) {
-      case FLUSHDRAW:
-        isFlushDraw = true;
-        break;
-      case STRAIGHTDRAW:
-        console.log('STRAIGHT');
-        isStraightDraw = true;
-        break;
-      case STRAIGHTFLUSHDRAW:
-        isStraightFlushDraw = true;
-        isFlushDraw = true;
-        break;
-      case NODRAW:
-        break;
-    }
-  }
+  var draw = this.hand.isStraightAndOrFlushDraw();
+  switch (draw) {
+    case STRAIGHTFLUSHDRAW:
+      if (this.hand.vector.indexOf('011110') > -1) {
+        this.frequency[STRAIGHTFLUSH] = 2;
+      }
+      else {
+        this.frequency[STRAIGHTFLUSH] = 1;
+      }
+      this.frequency[STRAIGHT] = nrOutsForStraight - this.frequency[STRAIGHTFLUSH];
+      this.frequency[FLUSH] = 9 - this.frequency[STRAIGHTFLUSH];
+      break;
+    case STRAIGHTANDFLUSHDRAW:
+      this.frequency[STRAIGHT] = nrOutsForStraight;
+      this.frequency[FLUSH] = 9;
+      break;
+    case STRAIGHTDRAW:
+      this.frequency[STRAIGHT] = nrOutsForStraight;
+      break;
 
-  if (isStraightFlushDraw) {
-    if (this.hand.vector.indexOf('011110') > -1) {
-      this.frequency[STRAIGHTFLUSH] = 2;
+    case FLUSHDRAW:
+      // One suite of which 13-4 ranks are left
+      this.frequency[FLUSH] = 9;
     }
-    else {
-      this.frequency[STRAIGHTFLUSH] = 1;
-    }
-  }
-
-  if (isStraightDraw) {
-    this.frequency[STRAIGHT] = nrOutsForStraight - this.frequency[STRAIGHTFLUSH];
-  }
-
-  if (isFlushDraw) {
-    // One suite of which 13-4 ranks are left
-    this.frequency[FLUSH] = 9 - this.frequency[STRAIGHTFLUSH];
-  }
 };
 
 // Calculates the probabilities of new hands at the turn
@@ -862,7 +777,7 @@ PosteriorProbabilities.prototype.turnProbabilities = function() {
       this.checkStraightAndOrFlush();
 
       this.frequency[FLUSH] = 46 -
-        this.frequency[STRAIGHTFLUSH];
+        this.frequency[STRAIGHTFLUSH] - this.frequency[STRAIGHT];
 
       //this.frequency[ROYALFLUSH] = 0;
       break;

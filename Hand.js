@@ -43,6 +43,11 @@ var CONNECTEDANDSUITED = 4;
 var pocketRankNames = ['High card', 'Pair', 'Suited cards', 'Connected cards',
   'Connected and suited'];
 
+var NODRAW = 0;
+var STRAIGHTDRAW = 1;
+var FLUSHDRAW = 2;
+var STRAIGHTANDFLUSHDRAW = 3;
+var STRAIGHTFLUSHDRAW = 4;
 
 function Hand(cards) {
   this.cards = [];
@@ -123,6 +128,112 @@ Hand.prototype.twoCardConnected = function() {
   );
 };
 
+// Checks a 5 card hand for a Straight draw
+Hand.prototype.isStraightDraw = function(cards) {
+  // Straight masks
+  var masks = ['11110', '01111', '11110', '10111', '11011', '11101'];
+
+  var vector = this.initVector(cards);
+
+  var maskIndex = -1;
+  if (masks.some(function (m, index) {
+      if (vector.indexOf(m) > -1) {
+        return (true);
+      }
+    })) {
+    return true;
+  }
+  // No match, so no Straight draw
+  return false;
+};
+
+// Precondition: cards is a 5 card hand, and ordered
+// Returns one of (NODRAW, STRAIGHTDRAW, FLUSHDRAW, STRAIGHTFLUSHDRAW)
+Hand.prototype.isStraightAndOrFlushDraw5 = function(cards) {
+  nrCardsPerSuite = [0, 0, 0, 0];
+  var that = this;
+  cards.forEach(function(card) {
+    nrCardsPerSuite[card.suite]++;
+  });
+  var flushSuite = -1;
+  var isFlushDraw =
+    nrCardsPerSuite.some(function(nrOfCards, suite) {
+      if (nrOfCards === 4) {
+        flushSuite = suite;
+        return true;
+      }
+    });
+  // Check for Straight Flush draw based on these four cards
+  if (isFlushDraw) {
+    for (var i = 0; i < cards.length; i++) {
+      if (cards[i].suite !== flushSuite) {
+        // Remove card
+        cards.splice(i, 1);
+      }
+    }
+    if (this.isStraightDraw(cards)) {
+      return STRAIGHTFLUSHDRAW;
+    }
+    else {
+      return FLUSHDRAW;
+    }
+  }
+  if (this.isFlush(cards)) {
+    if (this.isStraightDraw(cards)) {
+      return STRAIGHTFLUSHDRAW;
+    }
+    else {
+      return FLUSHDRAW;
+    }
+  }
+
+  if (this.isStraightDraw(cards)) {
+    return STRAIGHTDRAW;
+  }
+  else {
+    return NODRAW;
+  }
+};
+
+// Checks each possible five card hand for Flush draw, Straight draw, and
+// Straight Flush draw
+Hand.prototype.isStraightAndOrFlushDraw = function() {
+  var isStraightFlushDraw = false;
+  var isFlushDraw = false;
+  var isStraightDraw = false;
+  var cards;
+  for (var i = 0; i < 6; i++) {
+    cards = this.cards.slice();
+    cards.splice(i, 1);
+    isStraightAndOrFlush = this.isStraightAndOrFlushDraw5(cards);
+    switch (isStraightAndOrFlush) {
+      case FLUSHDRAW:
+        isFlushDraw = true;
+        break;
+      case STRAIGHTDRAW:
+        console.log('STRAIGHT');
+        isStraightDraw = true;
+        break;
+      case STRAIGHTFLUSHDRAW:
+        isStraightFlushDraw = true;
+        break;
+      case NODRAW:
+        break;
+    }
+  }
+  if (isStraightFlushDraw) {
+    return STRAIGHTFLUSHDRAW;
+  }
+  if (isFlushDraw && isStraightDraw) {
+    return STRAIGHTANDFLUSHDRAW;
+  }
+  if (isFlushDraw) {
+    return FLUSHDRAW;
+  }
+  if (isStraightDraw) {
+    return STRAIGHTDRAW;
+  }
+};
 
 // Based on
 // http://nsayer.blogspot.nl/2007/07/algorithm-for-evaluating-poker-hands.html
