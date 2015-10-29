@@ -17,7 +17,7 @@
 */
 
 var suites = ['Clubs', 'Spades', 'Diamonds', 'Hearts'];
-var suitesAbbrev = ['C', 'S', 'D', 'H'];
+var suitesAbbrev = ['c', 's', 'd', 'h'];
 
 var TWO = 0;
 var THREE = 1;
@@ -35,15 +35,14 @@ var ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen',
 var ranksAbbrev = ['2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q',
   'K', 'A'];
 
-
 function Card(suite, rank) {
   if (rank !== undefined) {
     this.suite = suites.indexOf(suite);
     this.rank = ranks.indexOf(rank);
   }
   else {
-    this.suite = suitesAbbrev.indexOf(suite[0]);
-    this.rank = ranksAbbrev.indexOf(suite[1]);
+    this.suite = suitesAbbrev.indexOf(suite[1]);
+    this.rank = ranksAbbrev.indexOf(suite[0]);
   }
 }
 

@@ -19,6 +19,13 @@
 var Hand = require('Hand');
 
 function bettingAction(contextToBeClassified) {
+  var cards = contextToBeClassified.holeCards.slice();
+  cards.concat(contextToBeClassified.communityCards);
+  var hand = new Hand(cards);
+  // If the probability of a better hand is larger than a threshold
+  // then we bet or go all-in
+  var betThreshhold = 40;
+  var allinThreshhold = 70;
 
 }
 
