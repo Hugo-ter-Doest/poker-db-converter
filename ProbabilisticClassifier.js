@@ -18,15 +18,58 @@
 
 var Hand = require('Hand');
 
+var checkThreshhold =  1;
+var callThreshhold =  30;
+var betThreshhold =   40;
+var raiseThreshhold = 50;
+var allinThreshhold = 70;
+
 function bettingAction(contextToBeClassified) {
   var cards = contextToBeClassified.holeCards.slice();
   cards.concat(contextToBeClassified.communityCards);
   var hand = new Hand(cards);
+  var rank = hand.analyseHand();
+
+  var sumFreq= 0;
+  hand.frequency.forEach(function(f, index) {
+    if (hand.cards.length === 2) {
+      if (hand.rank === Hand.PAIR) {
+        if (index > hand.rank) {
+          sumFreq += f;
+        }
+      }
+      else {
+        if (index > Hand.HIGHCARD) {
+          sumFreq += f;
+        }
+      }
+    }
+    else {
+      if (index > hand.rank) {
+        sumFreq += f;
+      }
+    }
+  });
+  var probBetterHand = 100 * sumFreq / Hand.totalCombinations;
   // If the probability of a better hand is larger than a threshold
   // then we bet or go all-in
-  var betThreshhold = 40;
-  var allinThreshhold = 70;
-
+  var action = 'fold';
+  if (probBetterHand < checkThreshhold) {
+    action = 'fold';
+  }
+  if (probBetterHand < callThreshhold) {
+    action = 'bet';
+  }
+  if (probBetterHand < betThreshhold) {
+    action = 'bet';
+  }
+  if (probBetterHand < raiseThreshhold) {
+    action = 'raise';
+  }
+  if (probBetterHand < allinThreshhold) {
+    action = 'all-in';
+  }
+  return(action);
 }
 
 function betttingAmount(contextToBeClassified, action) {
